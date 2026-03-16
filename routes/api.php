@@ -9,4 +9,7 @@ Route::post('/login', [\App\Http\Controllers\api\AuthenticateController::class, 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/refresh', [\App\Http\Controllers\api\AuthenticateController::class, 'refresh']);
     Route::post('/logout', [\App\Http\Controllers\api\AuthenticateController::class, 'logout']);
+
+    // ********* POST *********
+    Route::post('/posts/store', [\App\Http\Controllers\api\PostController::class, 'store']);
 });
