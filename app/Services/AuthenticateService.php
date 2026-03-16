@@ -9,29 +9,25 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthenticateService
 {
-    public function register(array $data)
+    public function register($data)
     {
         try {
             $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'char_name' => $data['char_name'],
-                'password' => Hash::make($data['password'])
+                'name' => $data->name,
+                'email' => $data->email,
+                'char_name' => $data->char_name,
+                'password' => Hash::make($data->password)
             ]);
-
-            $token = $user->createToken('auth_token')->plainTextToken;
 
             return [
                 'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer'
             ];
         } catch (\Exception $exception) {
             return ApiResponse::error();
         }
     }
 
-    public function login(array $credentials)
+    public function login($credentials)
     {
         try {
             $user = User::where('char_name', $credentials['char_name'])->first();
@@ -39,8 +35,9 @@ class AuthenticateService
             if (!$user || !Hash::check($credentials['password'], $user->password)) {
                 return ApiResponse::unauthorized();
             }
+//            dd($user);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            $token = $user->createToken('auth_token')->plainTextToken();
 
             return [
                 'user' => $user,
