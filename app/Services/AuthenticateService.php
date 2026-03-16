@@ -19,9 +19,7 @@ class AuthenticateService
                 'password' => Hash::make($data->password)
             ]);
 
-            return [
-                'user' => $user,
-            ];
+            return ApiResponse::success([$user, "Usuário cadastrado com sucesso!"]);
         } catch (\Exception $exception) {
             return ApiResponse::error();
         }
@@ -35,15 +33,10 @@ class AuthenticateService
             if (!$user || !Hash::check($credentials['password'], $user->password)) {
                 return ApiResponse::unauthorized();
             }
-//            dd($user);
 
             $token = $user->createToken('auth_token')->plainTextToken();
 
-            return [
-                'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer'
-            ];
+            return ApiResponse::success(['Bearer ' => $token, "Usuario logado com sucesso!"]);
         } catch (\Exception $exception) {
             return ApiResponse::error();
         }
@@ -57,10 +50,7 @@ class AuthenticateService
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return [
-                'access_token' => $token,
-                'token_type' => 'Bearer'
-            ];
+            return ApiResponse::success('Bearer ' . $token);
         } catch (\Exception $exception) {
             return ApiResponse::error();
         }
@@ -73,9 +63,7 @@ class AuthenticateService
             $user->tokens()->delete();
             $user->currentAccessToken()->delete();
 
-            return [
-                'message' => 'Logout realizado com sucesso'
-            ];
+            return ApiResponse::success("","Logout realizado com sucesso!");
         } catch (\Exception $exception) {
             return ApiResponse::error();
         }

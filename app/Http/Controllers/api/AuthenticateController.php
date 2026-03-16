@@ -21,24 +21,24 @@ class AuthenticateController extends Controller
 
     public function register(UserRequest $request)
     {
-        return ApiResponse::success($this->authService->register($request), "Usuario registrado");
+        return $this->authService->register($request);
     }
 
 
     public function login(LoginRequest $request)
     {
-        return ApiResponse::success($this->authService->login($request));
+        return $this->authService->login($request);
     }
 
 
     public function refresh()
     {
-        return ApiResponse::success($this->authService->refreshToken());
+        return $this->authService->refreshToken();
     }
 
 
     public function logout()
     {
-        return ApiResponse::success($this->authService->logout());
+        return $this->authService->logout();
     }
 }
