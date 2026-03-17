@@ -12,4 +12,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ********* POST *********
     Route::post('/posts/store', [\App\Http\Controllers\api\PostController::class, 'store']);
+    Route::delete('/posts/{post_id}/destroy', [\App\Http\Controllers\api\PostController::class, 'destroy']);
 });

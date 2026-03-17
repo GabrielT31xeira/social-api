@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Helpers\ApiResponse;
-use App\Http\Services\ValidationException;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticateService
 {
@@ -19,9 +19,9 @@ class AuthenticateService
                 'password' => Hash::make($data->password)
             ]);
 
-            return ApiResponse::success([$user, "Usuário cadastrado com sucesso!"]);
+            return ApiResponse::success($user, __('auth.register_success'));
         } catch (\Exception $exception) {
-            return ApiResponse::error();
+            return ApiResponse::error(__('auth.register_error'));
         }
     }
 
@@ -31,14 +31,14 @@ class AuthenticateService
             $user = User::where('char_name', $credentials['char_name'])->first();
 
             if (!$user || !Hash::check($credentials['password'], $user->password)) {
-                return ApiResponse::unauthorized();
+                return ApiResponse::unauthorized(__('auth.login_failed'));
             }
 
-            $token = $user->createToken('auth_token')->plainTextToken();
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-            return ApiResponse::success(['Bearer ' => $token, "Usuario logado com sucesso!"]);
+            return ApiResponse::success(['Bearer' => $token], __('auth.login_success'));
         } catch (\Exception $exception) {
-            return ApiResponse::error();
+            return ApiResponse::error(__('auth.login_error'));
         }
     }
 
@@ -50,9 +50,9 @@ class AuthenticateService
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return ApiResponse::success('Bearer ' . $token);
+            return ApiResponse::success(['Bearer' => $token], __('auth.refresh_success'));
         } catch (\Exception $exception) {
-            return ApiResponse::error();
+            return ApiResponse::error(__('auth.refresh_error'));
         }
     }
 
@@ -63,9 +63,9 @@ class AuthenticateService
             $user->tokens()->delete();
             $user->currentAccessToken()->delete();
 
-            return ApiResponse::success("","Logout realizado com sucesso!");
+            return ApiResponse::success(null, __('auth.logout_success'));
         } catch (\Exception $exception) {
-            return ApiResponse::error();
+            return ApiResponse::error(__('auth.logout_error'));
         }
     }
 }

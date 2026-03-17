@@ -3,6 +3,7 @@
 namespace App\Http\Requests\api\auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\ValidationException;
 
 class UserRequest extends FormRequest
 {
@@ -20,7 +21,6 @@ class UserRequest extends FormRequest
                 'min:3',
                 'max:255'
             ],
-
             'char_name' => [
                 'required',
                 'string',
@@ -29,14 +29,12 @@ class UserRequest extends FormRequest
                 'alpha_dash',
                 'unique:users,char_name'
             ],
-
             'email' => [
                 'required',
                 'email',
                 'max:255',
                 'unique:users,email'
             ],
-
             'password' => [
                 'required',
                 'string',
@@ -49,9 +47,42 @@ class UserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'char_name.unique' => 'Este nome de personagem já está em uso.',
-            'email.unique' => 'Este email já está cadastrado.',
-            'password.confirmed' => 'As senhas não coincidem.'
+            // name
+            'name.required'    => __('auth.name_required'),
+            'name.string'      => __('auth.name_string'),
+            'name.min'         => __('auth.name_min'),
+            'name.max'         => __('auth.name_max'),
+
+            // char_name
+            'char_name.required'   => __('auth.char_name_required'),
+            'char_name.string'     => __('auth.char_name_string'),
+            'char_name.min'        => __('auth.char_name_min'),
+            'char_name.max'        => __('auth.char_name_max'),
+            'char_name.alpha_dash' => __('auth.char_name_alpha_dash'),
+            'char_name.unique'     => __('auth.char_name_unique'),
+
+            // email
+            'email.required' => __('auth.email_required'),
+            'email.email'    => __('auth.email_email'),
+            'email.max'      => __('auth.email_max'),
+            'email.unique'   => __('auth.email_unique'),
+
+            // password
+            'password.required'      => __('auth.password_required'),
+            'password.string'        => __('auth.password_string'),
+            'password.min'           => __('auth.password_min'),
+            'password.confirmed'     => __('auth.password_confirmed'),
         ];
+    }
+
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        $response = response()->json([
+            'success' => false,
+            'message' => $validator->errors()->first(), // primeiro erro
+            'errors' => $validator->errors()            // lista completa
+        ], 422);
+
+        throw new ValidationException($validator, $response);
     }
 }

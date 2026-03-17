@@ -21,6 +21,20 @@ class PostService
                 return ApiResponse::success($post, "Post criado com sucesso!");
             });
         } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponse::error();
+        }
+    }
+
+    public function destroy($post_id)
+    {
+        try {
+            Db::transaction(function () use ($post_id) {
+                Post::destroy($post_id);
+                return ApiResponse::success("", "Post removido com sucesso!");
+            });
+        } catch (\Exception $e) {
+            DB::rollBack();
             return ApiResponse::error();
         }
     }
