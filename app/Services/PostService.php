@@ -23,7 +23,6 @@ class PostService
             return ApiResponse::success(__("post.create"));
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e->getMessage());
             return ApiResponse::error(__("post.error.basic"));
         }
     }
