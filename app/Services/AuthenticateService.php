@@ -38,6 +38,7 @@ class AuthenticateService
 
             return ApiResponse::success(['Bearer' => $token], __('auth.login_success'));
         } catch (\Exception $exception) {
+            dd($exception->getMessage());
             return ApiResponse::error(__('auth.login_error'));
         }
     }
