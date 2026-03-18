@@ -11,18 +11,20 @@ class PostService
     public function store($data)
     {
         try {
-            return DB::transaction(function () use ($data) {
-                $post = Post::create([
+            DB::transaction(function () use ($data) {
+                 Post::create([
                     'title' => $data['title'],
                     'content' => $data['content'],
                     'type_id' => $data['type_id'],
-                    'user_id' => auth()->user()
+                    'user_id' => auth()->user()->id
                 ]);
-                return ApiResponse::success($post, "Post criado com sucesso!");
             });
+            DB::commit();
+            return ApiResponse::success(__("post.create"));
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponse::error();
+            dd($e->getMessage());
+            return ApiResponse::error(__("post.error.basic"));
         }
     }
 
@@ -31,11 +33,12 @@ class PostService
         try {
             Db::transaction(function () use ($post_id) {
                 Post::destroy($post_id);
-                return ApiResponse::success("", "Post removido com sucesso!");
             });
+            DB::commit();
+            return ApiResponse::success(__("post.destroy"));
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponse::error();
+            return ApiResponse::error(__("post.error.basic"));
         }
     }
 }

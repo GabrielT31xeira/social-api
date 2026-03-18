@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('type', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->enum('post', ['original', 'comment']);
+            $table->string('description');
         });
     }
 

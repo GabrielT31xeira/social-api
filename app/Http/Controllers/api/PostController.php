@@ -18,7 +18,7 @@ class PostController extends Controller
 
     public function store(CreatRequest $request)
     {
-        return ApiResponse::success($this->postService->store($request));
+        return $this->postService->store($request);
     }
 
     public function destroy($post_id)

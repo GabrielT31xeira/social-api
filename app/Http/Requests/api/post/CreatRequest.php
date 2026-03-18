@@ -34,16 +34,14 @@ class CreatRequest extends FormRequest
     public function messages(): array
     {
         return [
-            // TITLE
-            'title.required' => 'O título do post é obrigatório.',
-            'title.string' => 'O título deve ser um texto válido.',
-            'title.min' => 'O título deve ter no mínimo :min caracteres.',
-            'title.max' => 'O título pode ter no máximo :max caracteres.',
+            'title.required' => __('post.validations.title.required'),
+            'title.string' => __('post.validations.title.string'),
+            'title.min' => __('post.validations.title.min'),
+            'title.max' => __('post.validations.title.max'),
 
-            // CONTENT
-            'content.required' => 'O conteúdo do post é obrigatório.',
-            'content.string' => 'O conteúdo deve ser um texto válido.',
-            'content.min' => 'O conteúdo deve ter no mínimo :min caracteres.',
+            'content.required' => __('post.validations.content.required'),
+            'content.string' => __('post.validations.content.string'),
+            'content.min' => __('post.validations.content.min'),
         ];
     }
 

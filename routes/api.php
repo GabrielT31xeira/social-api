@@ -11,6 +11,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\api\AuthenticateController::class, 'logout']);
 
     // ********* POST *********
-    Route::post('/posts/store', [\App\Http\Controllers\api\PostController::class, 'store']);
+    Route::post('/post/store', [\App\Http\Controllers\api\PostController::class, 'store']);
     Route::delete('/posts/{post_id}/destroy', [\App\Http\Controllers\api\PostController::class, 'destroy']);
 });
