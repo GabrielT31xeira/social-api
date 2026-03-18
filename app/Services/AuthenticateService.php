@@ -36,9 +36,8 @@ class AuthenticateService
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return ApiResponse::success(['Bearer' => $token], __('auth.login_success'));
+            return ApiResponse::success(['Bearer' => $token, 'user'=> $user], __('auth.login_success'));
         } catch (\Exception $exception) {
-            dd($exception->getMessage());
             return ApiResponse::error(__('auth.login_error'));
         }
     }
