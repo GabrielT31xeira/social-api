@@ -36,7 +36,7 @@ class AuthenticateService
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return ApiResponse::success(['Bearer' => $token, 'user'=> $user], __('auth.login_success'));
+            return ApiResponse::successWithBody(['Bearer' => $token, 'user'=> $user], __('auth.login_success'));
         } catch (\Exception $exception) {
             return ApiResponse::error(__('auth.login_error'));
         }
@@ -50,7 +50,7 @@ class AuthenticateService
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return ApiResponse::success(['Bearer' => $token], __('auth.refresh_success'));
+            return ApiResponse::successWithBody(['Bearer' => $token], __('auth.refresh_success'));
         } catch (\Exception $exception) {
             return ApiResponse::error(__('auth.refresh_error'));
         }
@@ -63,7 +63,7 @@ class AuthenticateService
             $user->tokens()->delete();
             $user->currentAccessToken()->delete();
 
-            return ApiResponse::success(null, __('auth.logout_success'));
+            return ApiResponse::success(__('auth.logout_success'));
         } catch (\Exception $exception) {
             return ApiResponse::error(__('auth.logout_error'));
         }

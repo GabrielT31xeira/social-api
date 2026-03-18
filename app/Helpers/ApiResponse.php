@@ -4,6 +4,15 @@ namespace App\Helpers;
 
 class ApiResponse
 {
+    public static function successWithBody($data = null, string $message, int $code = 200)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data
+        ], $code);
+    }
+
     public static function success(string $message, int $code = 200)
     {
         return response()->json([
