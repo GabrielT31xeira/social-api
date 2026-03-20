@@ -8,12 +8,12 @@ return [
     'name_max'      => 'O nome completo não pode ter mais que :max caracteres.',
 
     // char_name
-    'char_name_required'   => 'O nome do personagem é obrigatório.',
-    'char_name_string'     => 'O nome do personagem deve ser uma string.',
-    'char_name_min'        => 'O nome do personagem deve ter pelo menos :min caracteres.',
-    'char_name_max'        => 'O nome do personagem não pode ter mais que :max caracteres.',
-    'char_name_alpha_dash' => 'O nome do personagem pode conter apenas letras, números, traços e underscores.',
-    'char_name_unique'     => 'Este nome de personagem já está em uso.',
+    'char_name_required'   => 'O nome do usuário é obrigatório.',
+    'char_name_string'     => 'O nome do usuário deve ser uma string.',
+    'char_name_min'        => 'O nome do usuário deve ter pelo menos :min caracteres.',
+    'char_name_max'        => 'O nome do usuário não pode ter mais que :max caracteres.',
+    'char_name_alpha_dash' => 'O nome do usuário pode conter apenas letras, números, traços e underscores.',
+    'char_name_unique'     => 'Este nome de usuário já está em uso.',
 
     // email
     'email_required' => 'O e-mail é obrigatório.',

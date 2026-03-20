@@ -8,12 +8,12 @@ return [
     'name_max'      => 'The full name may not be greater than :max characters.',
 
     // char_name
-    'char_name_required'   => 'The character name is required.',
-    'char_name_string'     => 'The character name must be a string.',
-    'char_name_min'        => 'The character name must be at least :min characters.',
-    'char_name_max'        => 'The character name may not be greater than :max characters.',
-    'char_name_alpha_dash' => 'The character name may only contain letters, numbers, dashes and underscores.',
-    'char_name_unique'     => 'This character name is already taken.',
+    'char_name_required'   => 'The user name is required.',
+    'char_name_string'     => 'The user name must be a string.',
+    'char_name_min'        => 'The user name must be at least :min characters.',
+    'char_name_max'        => 'The user name may not be greater than :max characters.',
+    'char_name_alpha_dash' => 'The user name may only contain letters, numbers, dashes and underscores.',
+    'char_name_unique'     => 'This user name is already taken.',
 
     // email
     'email_required' => 'The email is required.',
