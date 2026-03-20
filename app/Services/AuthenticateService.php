@@ -2,70 +2,62 @@
 
 namespace App\Services;
 
-use App\Helpers\ApiResponse;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthenticateService
 {
-    public function register($data)
+    public function register(array $data): User
     {
-        try {
-            $user = User::create([
-                'name' => $data->name,
-                'email' => $data->email,
-                'char_name' => $data->char_name,
-                'password' => Hash::make($data->password)
-            ]);
-
-            return ApiResponse::success($user, __('auth.register_success'));
-        } catch (\Exception $exception) {
-            return ApiResponse::error(__('auth.register_error'));
-        }
+        return User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'char_name' => $data['char_name'],
+            'password' => Hash::make($data['password']),
+        ]);
     }
 
-    public function login($credentials)
+    public function login(array $credentials): array
     {
-        try {
-            $user = User::where('char_name', $credentials['char_name'])->first();
-
-            if (!$user || !Hash::check($credentials['password'], $user->password)) {
-                return ApiResponse::unauthorized(__('auth.login_failed'));
-            }
-
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return ApiResponse::successWithBody(['Bearer' => $token, 'user'=> $user], __('auth.login_success'));
-        } catch (\Exception $exception) {
-            return ApiResponse::error(__('auth.login_error'));
+        if (!Auth::attempt([
+            'char_name' => $credentials['char_name'],
+            'password' => $credentials['password'],
+        ])) {
+            throw new \Exception(__('auth.login_failed'));
         }
+
+        $user = Auth::user();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return [
+            'user' => $user,
+            'token' => $token,
+        ];
     }
 
-    public function refreshToken()
+    public function refreshToken(): string
     {
-        try {
-            $user = auth()->user();
-            $user->tokens()->delete();
+        $user = auth()->user();
 
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return ApiResponse::successWithBody(['Bearer' => $token], __('auth.refresh_success'));
-        } catch (\Exception $exception) {
-            return ApiResponse::error(__('auth.refresh_error'));
+        if (!$user) {
+            throw new \Illuminate\Auth\AuthenticationException();
         }
+
+        $user->currentAccessToken()->delete();
+
+        return $user->createToken('auth_token')->plainTextToken;
     }
 
-    public function logout()
+    public function logout(): void
     {
-        try {
-            $user = auth()->user();
-            $user->tokens()->delete();
-            $user->currentAccessToken()->delete();
+        $user = auth()->user();
 
-            return ApiResponse::success(__('auth.logout_success'));
-        } catch (\Exception $exception) {
-            return ApiResponse::error(__('auth.logout_error'));
+        if (!$user) {
+            throw new \Illuminate\Auth\AuthenticationException();
         }
+
+        $user->currentAccessToken()->delete();
     }
 }

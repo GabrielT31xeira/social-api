@@ -30,11 +30,10 @@ class ApiResponse
         ], $code);
     }
 
-    public static function validation($errors, string $message = 'Validation error')
+    public static function validation($errors)
     {
         return response()->json([
             'success' => false,
-            'message' => $message,
             'errors' => $errors
         ], 422);
     }

@@ -43,4 +43,6 @@ return [
     // Logout
     'logout_success'   => 'Logout successful!',
     'logout_error'     => 'Failed to logout, please try again!',
+
+    'unauthenticated' => 'Unauthenticated.',
 ];

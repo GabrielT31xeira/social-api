@@ -37,15 +37,4 @@ class LoginRequest extends FormRequest
             'password.string'    => __('auth.password_string'),
         ];
     }
-
-    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
-    {
-        $response = response()->json([
-            'success' => false,
-            'message' => $validator->errors()->first(), // primeiro erro
-            'errors' => $validator->errors()            // lista completa
-        ], 422);
-
-        throw new ValidationException($validator, $response);
-    }
 }
