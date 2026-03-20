@@ -20,5 +20,10 @@ return [
             'string' => 'O conteúdo deve ser um texto válido.',
             'min' => 'O conteúdo deve ter no mínimo :min caracteres.',
         ],
+        // TYPE
+        'type_id' => [
+            'required' => 'O tipo é obrigatorio.',
+            'integer' => 'O tipo deve ser um inteiro.',
+        ]
     ],
 ];

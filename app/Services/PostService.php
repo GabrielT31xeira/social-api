@@ -2,42 +2,42 @@
 
 namespace App\Services;
 
-use App\Helpers\ApiResponse;
 use App\Models\Post;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class PostService
 {
-    public function store($data)
+    public function index(): LengthAwarePaginator
     {
-        try {
-            DB::transaction(function () use ($data) {
-                 Post::create([
-                    'title' => $data['title'],
-                    'content' => $data['content'],
-                    'type_id' => $data['type_id'],
-                    'user_id' => auth()->user()->id
-                ]);
-            });
-            DB::commit();
-            return ApiResponse::success(__("post.create"));
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return ApiResponse::error(__("post.error.basic"));
-        }
+        return Post::query()
+            ->with(['user:id,char_name'])
+            ->latest()
+            ->paginate(10);
     }
 
-    public function destroy($post_id)
+    public function store(array $data, string $userId): Post
     {
-        try {
-            Db::transaction(function () use ($post_id) {
-                Post::destroy($post_id);
-            });
-            DB::commit();
-            return ApiResponse::success(__("post.destroy"));
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return ApiResponse::error(__("post.error.basic"));
-        }
+//        dd($data);
+        return DB::transaction(function () use ($data, $userId) {
+            return Post::create([
+                'title' => $data['title'],
+                'content' => $data['content'],
+                'type_id' => $data['type_id'],
+                'user_id' => $userId,
+            ]);
+        });
+    }
+
+    public function destroy(string $postId, string $userId): void
+    {
+        $post = Post::query()
+            ->where('id', $postId)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        DB::transaction(function () use ($post) {
+            $post->delete();
+        });
     }
 }

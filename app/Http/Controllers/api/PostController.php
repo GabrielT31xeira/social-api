@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api;
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\api\post\CreatRequest;
+use App\Http\Resources\PostResource;
 use App\Services\PostService;
 
 class PostController extends Controller
@@ -16,13 +17,33 @@ class PostController extends Controller
         $this->postService = $postService;
     }
 
-    public function store(CreatRequest $request)
+    public function index()
     {
-        return $this->postService->store($request);
+        $posts = $this->postService->index();
+
+        return ApiResponse::successWithBody(
+            PostResource::collection($posts),
+            ''
+        );
     }
 
-    public function destroy($post_id)
+    public function store(CreatRequest $request)
     {
-        return ApiResponse::success();
+        $post = $this->postService->store(
+            $request->validated(),
+            auth()->id()
+        );
+
+        return ApiResponse::successWithBody(
+            new PostResource($post),
+            __('post.create')
+        );
+    }
+
+    public function destroy(string $id)
+    {
+        $this->postService->destroy($id, auth()->id());
+
+        return ApiResponse::success(__('post.destroy'));
     }
 }

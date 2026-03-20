@@ -7,10 +7,11 @@ Route::post('/register', [\App\Http\Controllers\api\AuthenticateController::clas
 Route::post('/login', [\App\Http\Controllers\api\AuthenticateController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/refresh', [\App\Http\Controllers\api\AuthenticateController::class, 'refresh']);
+    Route::post('/refresh', [\App\Http\Controllers\api\AuthenticateController::class, 'refreshToken']);
     Route::post('/logout', [\App\Http\Controllers\api\AuthenticateController::class, 'logout']);
 
     // ********* POST *********
+    Route::get('/posts', [\App\Http\Controllers\api\PostController::class, 'index']);
     Route::post('/post/store', [\App\Http\Controllers\api\PostController::class, 'store']);
     Route::delete('/posts/{post_id}/destroy', [\App\Http\Controllers\api\PostController::class, 'destroy']);
 });

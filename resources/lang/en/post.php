@@ -20,5 +20,10 @@ return [
             'string' => 'The content must be a valid string.',
             'min' => 'The content must be at least :min characters.',
         ],
+        // TYPE
+        'type_id' => [
+            'required' => 'The post type is required.',
+            'integer' => 'The post type must be an integer.',
+        ]
     ],
 ];
