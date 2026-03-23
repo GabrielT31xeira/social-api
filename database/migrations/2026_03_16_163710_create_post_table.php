@@ -21,10 +21,6 @@ return new class extends Migration
                 ->constrained('users')
                 ->cascadeOnDelete();
 
-            $table->foreignUuid('type_id')
-                ->constrained('type')
-                ->cascadeOnDelete();
-
             $table->timestamps();
         });
     }
