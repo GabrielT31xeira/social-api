@@ -21,10 +21,7 @@ class PostController extends Controller
     {
         $posts = $this->postService->index();
 
-        return ApiResponse::successWithBody(
-            PostResource::collection($posts),
-            ''
-        );
+        return ApiResponse::successPaginate($posts);
     }
 
     public function store(CreatRequest $request)

@@ -3,14 +3,13 @@
 namespace App\Services;
 
 use App\Models\Post;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class PostService
 {
-    public function index(): LengthAwarePaginator
+    public function index()
     {
-        return Post::query()
+        return Post::where('type_id', 1)
             ->with(['user:id,char_name'])
             ->latest()
             ->paginate(10);
@@ -18,7 +17,6 @@ class PostService
 
     public function store(array $data, string $userId): Post
     {
-//        dd($data);
         return DB::transaction(function () use ($data, $userId) {
             return Post::create([
                 'title' => $data['title'],

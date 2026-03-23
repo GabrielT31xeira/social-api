@@ -2,15 +2,37 @@
 
 namespace App\Helpers;
 
+use Illuminate\Pagination\LengthAwarePaginator;
+
 class ApiResponse
 {
-    public static function successWithBody($data = null, string $message, int $code = 200)
+    public static function successPaginate($data)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $data->items(),
+            'meta' => [
+                'current_page' => $data->currentPage(),
+                'last_page' => $data->lastPage(),
+                'per_page' => $data->perPage(),
+                'total' => $data->total(),
+            ],
+            'links' => [
+                'first' => $data->url(1),
+                'last' => $data->url($data->lastPage()),
+                'prev' => $data->previousPageUrl(),
+                'next' => $data->nextPageUrl(),
+            ],
+        ]);
+    }
+
+    public static function successWithBody($data = null, string $message = ''): \Illuminate\Http\JsonResponse
     {
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => $data
-        ], $code);
+            'data' => $data,
+        ]);
     }
 
     public static function success(string $message, int $code = 200)
