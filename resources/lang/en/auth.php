@@ -14,7 +14,7 @@ return [
     'char_name_max'        => 'The user name may not be greater than :max characters.',
     'char_name_alpha_dash' => 'The user name may only contain letters, numbers, dashes and underscores.',
     'char_name_unique'     => 'This user name is already taken.',
-
+    'user_not_found'       => 'User not found.',
     // email
     'email_required' => 'The email is required.',
     'email_email'    => 'Please enter a valid email address.',

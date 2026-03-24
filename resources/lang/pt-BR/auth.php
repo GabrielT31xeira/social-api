@@ -14,6 +14,7 @@ return [
     'char_name_max'        => 'O nome do usuário não pode ter mais que :max caracteres.',
     'char_name_alpha_dash' => 'O nome do usuário pode conter apenas letras, números, traços e underscores.',
     'char_name_unique'     => 'Este nome de usuário já está em uso.',
+    'user_not_found'       => 'Usuário não encontrado.',
 
     // email
     'email_required' => 'O e-mail é obrigatório.',
