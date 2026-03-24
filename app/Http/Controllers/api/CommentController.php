@@ -14,12 +14,10 @@ class CommentController extends Controller
         private CommentService $commentService
     ){}
 
-    public function getByPost(string $postId)
+    public function getByPost(string $post_id)
     {
-        $comments = $this->commentService->getByPost($postId);
-
         return ApiResponse::successWithBody(
-            CommentResource::collection($comments),
+            $this->commentService->getByPost($post_id)
         );
     }
 

@@ -21,7 +21,6 @@ class PostService
             return Post::create([
                 'title' => $data['title'],
                 'content' => $data['content'],
-                'type_id' => $data['type_id'],
                 'user_id' => $userId,
             ]);
         });

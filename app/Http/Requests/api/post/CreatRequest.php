@@ -28,11 +28,6 @@ class CreatRequest extends FormRequest
                 'string',
                 'min:5'
             ],
-
-            'type_id' => [
-                'required',
-                'integer',
-            ]
         ];
     }
 
@@ -47,9 +42,6 @@ class CreatRequest extends FormRequest
             'content.required' => __('post.validations.content.required'),
             'content.string' => __('post.validations.content.string'),
             'content.min' => __('post.validations.content.min'),
-
-            'type_id.required' => __('post.validations.type_id.required'),
-            'type_id.integer' => __('post.validations.type_id.integer'),
         ];
     }
 }

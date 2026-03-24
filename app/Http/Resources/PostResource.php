@@ -14,17 +14,8 @@ class PostResource extends JsonResource
     {
         return [
             'id' => (string) $this->id,
-
             'title' => $this->title,
             'content' => $this->content,
-
-            // Relacionamentos (só carrega se vier com ->with())
-            'user' => new UserResource($this->whenLoaded('user')),
-
-            'type' => [
-                'id' => $this->whenLoaded('type', fn () => $this->type->id),
-                'name' => $this->whenLoaded('type', fn () => $this->type->post),
-            ],
 
             // Datas formatadas (padrão API)
             'created_at' => $this->created_at?->toISOString(),
