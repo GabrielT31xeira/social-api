@@ -16,6 +16,7 @@ return [
 
     'success' => [
         'created' => 'Comment created successfully.',
+        'deleted' => 'Comment deleted successfully.',
     ],
 
     'error' => [

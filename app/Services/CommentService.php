@@ -4,7 +4,8 @@ namespace App\Services;
 
 use App\Models\Comment;
 use App\Models\Post;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CommentService
 {
@@ -22,16 +23,34 @@ class CommentService
 
         return [
             'post' => $post,
-            'comments' => $comments
+            'comments' => $comments,
         ];
     }
 
     public function create(array $data): Comment
     {
-        return Comment::create([
-            'description' => $data['description'],
-            'post_id' => $data['post_id'],
-            'user_id' => auth()->id()
-        ]);
+        return DB::transaction(function () use ($data) {
+            return Comment::create([
+                'description' => $data['description'],
+                'post_id' => $data['post_id'],
+                'user_id' => auth()->id(),
+            ]);
+        });
+    }
+
+    public function destroy(string $commentId, string $userId): void
+    {
+        $comment = Comment::query()
+            ->where('id', $commentId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$comment) {
+            throw new NotFoundHttpException(__('comment.error.not_found'));
+        }
+
+        DB::transaction(function () use ($comment) {
+            $comment->delete();
+        });
     }
 }

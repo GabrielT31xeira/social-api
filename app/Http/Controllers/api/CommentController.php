@@ -30,4 +30,13 @@ class CommentController extends Controller
             __('comment.success.created')
         );
     }
+
+    public function destroy(string $comment_id)
+    {
+        $this->commentService->destroy($comment_id, auth()->id());
+
+        return ApiResponse::success(
+            __('comment.success.deleted')
+        );
+    }
 }

@@ -16,6 +16,7 @@ return [
 
     'success' => [
         'created' => 'Comentário criado com sucesso.',
+        'deleted' => 'Comentário removido com sucesso.',
     ],
 
     'error' => [
