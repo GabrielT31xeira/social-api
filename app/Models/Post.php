@@ -21,7 +21,6 @@ class Post extends Model
         'title',
         'content',
         'user_id',
-        'type_id'
     ];
 
     /*
@@ -33,11 +32,6 @@ class Post extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function type()
-    {
-        return $this->belongsTo(Type::class);
     }
 
     protected static function boot()

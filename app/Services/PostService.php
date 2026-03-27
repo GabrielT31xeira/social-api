@@ -9,8 +9,7 @@ class PostService
 {
     public function index()
     {
-        return Post::where('type_id', 1)
-            ->with(['user:id,char_name'])
+        return Post::with(['user:id,char_name'])
             ->latest()
             ->paginate(10);
     }
