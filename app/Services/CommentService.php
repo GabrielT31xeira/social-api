@@ -41,11 +41,14 @@ class CommentService
     public function destroy(string $commentId, string $userId): void
     {
         $comment = Comment::query()
+            ->with('post:id,user_id')
             ->where('id', $commentId)
-            ->where('user_id', $userId)
             ->first();
 
-        if (!$comment) {
+        if (
+            !$comment ||
+            ($comment->user_id !== $userId && $comment->post?->user_id !== $userId)
+        ) {
             throw new NotFoundHttpException(__('comment.error.not_found'));
         }
 

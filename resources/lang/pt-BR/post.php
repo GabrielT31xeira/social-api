@@ -5,6 +5,7 @@ return [
     "destroy" => "Post removido com sucesso!",
     "error" => [
         "basic" => "Erro por parte do servidor, tente novamente!",
+        "not_found" => "Post nao encontrado.",
     ],
     'validations' => [
         // TITLE

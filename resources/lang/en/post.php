@@ -5,6 +5,7 @@ return [
     "destroy" => "Post deleted!",
     "error" => [
         "basic" => "Error to create post, try again!",
+        "not_found" => "Post not found.",
     ],
     'validations' => [
         // TITLE

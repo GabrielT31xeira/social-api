@@ -37,9 +37,9 @@ class PostController extends Controller
         );
     }
 
-    public function destroy(string $id)
+    public function destroy(string $post_id)
     {
-        $this->postService->destroy($id, auth()->id());
+        $this->postService->destroy($post_id, auth()->id());
 
         return ApiResponse::success(__('post.destroy'));
     }

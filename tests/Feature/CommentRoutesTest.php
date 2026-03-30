@@ -80,10 +80,51 @@ class CommentRoutesTest extends TestCase
         ]);
     }
 
+    public function test_post_owner_can_delete_comment_from_another_user(): void
+    {
+        $postOwner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $commentOwner = User::factory()->create([
+            'char_name' => 'comment-owner',
+        ]);
+
+        $post = Post::query()->create([
+            'title' => 'Managed post',
+            'content' => 'Managed content',
+            'user_id' => $postOwner->id,
+        ]);
+
+        $comment = Comment::query()->create([
+            'description' => 'Comment moderated by post owner',
+            'post_id' => $post->id,
+            'user_id' => $commentOwner->id,
+        ]);
+
+        Sanctum::actingAs($postOwner);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'en')
+            ->deleteJson('/api/comments/'.$comment->id);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('message', 'Comment deleted successfully.');
+
+        $this->assertDatabaseMissing('comment', [
+            'id' => $comment->id,
+        ]);
+    }
+
     public function test_user_cannot_delete_a_comment_from_another_user(): void
     {
-        $owner = User::factory()->create([
-            'char_name' => 'owner-user',
+        $postOwner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $commentOwner = User::factory()->create([
+            'char_name' => 'comment-owner',
         ]);
 
         $intruder = User::factory()->create([
@@ -93,13 +134,13 @@ class CommentRoutesTest extends TestCase
         $post = Post::query()->create([
             'title' => 'Protected post',
             'content' => 'Protected content',
-            'user_id' => $owner->id,
+            'user_id' => $postOwner->id,
         ]);
 
         $comment = Comment::query()->create([
             'description' => 'Protected comment',
             'post_id' => $post->id,
-            'user_id' => $owner->id,
+            'user_id' => $commentOwner->id,
         ]);
 
         Sanctum::actingAs($intruder);

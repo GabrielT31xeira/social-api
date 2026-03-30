@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Post;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class PostService
 {
@@ -30,8 +31,11 @@ class PostService
     {
         $post = Post::query()
             ->where('id', $postId)
-            ->where('user_id', $userId)
-            ->firstOrFail();
+            ->first();
+
+        if (!$post || $post->user_id !== $userId) {
+            throw new NotFoundHttpException(__('post.error.not_found'));
+        }
 
         DB::transaction(function () use ($post) {
             $post->delete();
