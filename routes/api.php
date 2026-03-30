@@ -24,5 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ********* COMMENT *********
     Route::get('/posts/{post_id}/comments', [\App\Http\Controllers\api\CommentController::class, 'getByPost']);
     Route::post('/comments', [\App\Http\Controllers\api\CommentController::class, 'store']);
+    Route::post('/comments/{comment_id}/reaction', [\App\Http\Controllers\api\CommentController::class, 'react']);
+    Route::delete('/comments/{comment_id}/reaction', [\App\Http\Controllers\api\CommentController::class, 'removeReaction']);
     Route::delete('/comments/{comment_id}/destroy', [\App\Http\Controllers\api\CommentController::class, 'destroy']);
 });

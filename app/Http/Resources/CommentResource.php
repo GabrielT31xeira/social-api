@@ -12,6 +12,9 @@ class CommentResource extends JsonResource
         return [
             'id' => $this->id,
             'description' => $this->description,
+            'likes_count' => $this->likes_count ?? 0,
+            'dislikes_count' => $this->dislikes_count ?? 0,
+            'my_reaction' => $this->my_reaction,
             'created_at' => $this->created_at,
             'user' => [
                 'id' => $this->user->id ?? null,

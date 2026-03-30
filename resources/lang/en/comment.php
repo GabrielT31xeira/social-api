@@ -19,6 +19,15 @@ return [
         'deleted' => 'Comment deleted successfully.',
     ],
 
+    'reaction' => [
+        'saved' => 'Comment reaction saved successfully.',
+        'removed' => 'Comment reaction removed successfully.',
+        'validation' => [
+            'required' => 'The reaction type is required.',
+            'in' => 'The reaction type must be like or dislike.',
+        ],
+    ],
+
     'error' => [
         'not_found' => 'Comment not found.',
     ],

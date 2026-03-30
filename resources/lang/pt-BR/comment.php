@@ -3,24 +3,33 @@
 return [
 
     'description' => [
-        'required' => 'O comentário é obrigatório.',
-        'string' => 'O comentário deve ser um texto válido.',
-        'max' => 'O comentário deve ter no máximo :max caracteres.',
+        'required' => 'O comentario e obrigatorio.',
+        'string' => 'O comentario deve ser um texto valido.',
+        'max' => 'O comentario deve ter no maximo :max caracteres.',
     ],
 
     'post_id' => [
-        'required' => 'O post é obrigatório.',
-        'uuid' => 'O identificador do post deve ser um UUID válido.',
-        'exists' => 'O post informado não existe.',
+        'required' => 'O post e obrigatorio.',
+        'uuid' => 'O identificador do post deve ser um UUID valido.',
+        'exists' => 'O post informado nao existe.',
     ],
 
     'success' => [
-        'created' => 'Comentário criado com sucesso.',
-        'deleted' => 'Comentário removido com sucesso.',
+        'created' => 'Comentario criado com sucesso.',
+        'deleted' => 'Comentario removido com sucesso.',
+    ],
+
+    'reaction' => [
+        'saved' => 'Reacao do comentario salva com sucesso.',
+        'removed' => 'Reacao do comentario removida com sucesso.',
+        'validation' => [
+            'required' => 'O tipo de reacao e obrigatorio.',
+            'in' => 'O tipo de reacao deve ser like ou dislike.',
+        ],
     ],
 
     'error' => [
-        'not_found' => 'Comentário não encontrado.',
+        'not_found' => 'Comentario nao encontrado.',
     ],
 
 ];

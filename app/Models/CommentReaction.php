@@ -4,44 +4,33 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
-class Comment extends Model
+class CommentReaction extends Model
 {
     use HasUuids;
 
-    protected $table = 'comment';
+    protected $table = 'comment_reaction';
 
     public $incrementing = false;
 
     protected $keyType = 'string';
 
     protected $fillable = [
-        'description',
         'user_id',
-        'post_id',
+        'comment_id',
+        'type',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATIONSHIPS
-    |--------------------------------------------------------------------------
-    */
-
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function post()
+    public function comment(): BelongsTo
     {
-        return $this->belongsTo(Post::class);
-    }
-
-    public function reactions(): HasMany
-    {
-        return $this->hasMany(CommentReaction::class);
+        return $this->belongsTo(Comment::class);
     }
 
     protected static function boot()

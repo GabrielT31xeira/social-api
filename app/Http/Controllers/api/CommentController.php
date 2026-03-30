@@ -4,9 +4,11 @@ namespace App\Http\Controllers\api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\api\comment\CommentReactionRequest;
 use App\Http\Requests\api\comment\StoreCommentRequest;
 use App\Http\Resources\CommentResource;
 use App\Services\CommentService;
+use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
@@ -14,10 +16,19 @@ class CommentController extends Controller
         private CommentService $commentService
     ){}
 
-    public function getByPost(string $post_id)
+    public function getByPost(Request $request, string $post_id)
     {
+        $sort = $request->validate([
+            'sort' => ['nullable', 'in:recent,best_rated,worst_rated'],
+        ])['sort'] ?? 'recent';
+
+        $payload = $this->commentService->getByPost($post_id, $sort);
+        $payload['comments']->setCollection(
+            $payload['comments']->getCollection()->map(fn ($comment) => new CommentResource($comment))
+        );
+
         return ApiResponse::successWithBody(
-            $this->commentService->getByPost($post_id)
+            $payload
         );
     }
 
@@ -26,7 +37,7 @@ class CommentController extends Controller
         $comment = $this->commentService->create($request->validated());
 
         return ApiResponse::successWithBody(
-            new CommentResource($comment->load('user:id,char_name')),
+            new CommentResource($comment),
             __('comment.success.created')
         );
     }
@@ -37,6 +48,33 @@ class CommentController extends Controller
 
         return ApiResponse::success(
             __('comment.success.deleted')
+        );
+    }
+
+    public function react(CommentReactionRequest $request, string $comment_id)
+    {
+        $comment = $this->commentService->react(
+            $comment_id,
+            auth()->id(),
+            $request->validated()['type']
+        );
+
+        return ApiResponse::successWithBody(
+            new CommentResource($comment),
+            __('comment.reaction.saved')
+        );
+    }
+
+    public function removeReaction(string $comment_id)
+    {
+        $comment = $this->commentService->removeReaction(
+            $comment_id,
+            auth()->id()
+        );
+
+        return ApiResponse::successWithBody(
+            new CommentResource($comment),
+            __('comment.reaction.removed')
         );
     }
 }
