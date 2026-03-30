@@ -100,6 +100,136 @@ class PostRoutesTest extends TestCase
             ]);
     }
 
+    public function test_posts_index_can_be_sorted_by_best_rated(): void
+    {
+        $viewer = User::factory()->create([
+            'char_name' => 'viewer-user',
+        ]);
+
+        $reactorOne = User::factory()->create([
+            'char_name' => 'reactor-one',
+        ]);
+
+        $reactorTwo = User::factory()->create([
+            'char_name' => 'reactor-two',
+        ]);
+
+        $postOwner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $bestPost = Post::query()->create([
+            'title' => 'Best post',
+            'content' => 'Best content',
+            'user_id' => $postOwner->id,
+        ]);
+
+        $worstPost = Post::query()->create([
+            'title' => 'Worst post',
+            'content' => 'Worst content',
+            'user_id' => $postOwner->id,
+        ]);
+
+        Sanctum::actingAs($reactorOne);
+        $this->postJson('/api/posts/'.$bestPost->id.'/reaction', ['type' => 'like']);
+        $this->postJson('/api/posts/'.$worstPost->id.'/reaction', ['type' => 'dislike']);
+
+        Sanctum::actingAs($reactorTwo);
+        $this->postJson('/api/posts/'.$bestPost->id.'/reaction', ['type' => 'like']);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this->getJson('/api/posts?sort=best_rated');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $bestPost->id)
+            ->assertJsonPath('data.1.id', $worstPost->id);
+    }
+
+    public function test_posts_index_can_be_sorted_by_worst_rated(): void
+    {
+        $viewer = User::factory()->create([
+            'char_name' => 'viewer-user',
+        ]);
+
+        $reactorOne = User::factory()->create([
+            'char_name' => 'reactor-one',
+        ]);
+
+        $reactorTwo = User::factory()->create([
+            'char_name' => 'reactor-two',
+        ]);
+
+        $postOwner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $bestPost = Post::query()->create([
+            'title' => 'Best post',
+            'content' => 'Best content',
+            'user_id' => $postOwner->id,
+        ]);
+
+        $worstPost = Post::query()->create([
+            'title' => 'Worst post',
+            'content' => 'Worst content',
+            'user_id' => $postOwner->id,
+        ]);
+
+        Sanctum::actingAs($reactorOne);
+        $this->postJson('/api/posts/'.$bestPost->id.'/reaction', ['type' => 'like']);
+        $this->postJson('/api/posts/'.$worstPost->id.'/reaction', ['type' => 'dislike']);
+
+        Sanctum::actingAs($reactorTwo);
+        $this->postJson('/api/posts/'.$worstPost->id.'/reaction', ['type' => 'dislike']);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this->getJson('/api/posts?sort=worst_rated');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $worstPost->id)
+            ->assertJsonPath('data.1.id', $bestPost->id);
+    }
+
+    public function test_posts_index_uses_recent_sort_by_default(): void
+    {
+        $viewer = User::factory()->create([
+            'char_name' => 'viewer-user',
+        ]);
+
+        $postOwner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $olderPost = Post::query()->create([
+            'title' => 'Older post',
+            'content' => 'Older content',
+            'user_id' => $postOwner->id,
+            'created_at' => now()->subMinute(),
+            'updated_at' => now()->subMinute(),
+        ]);
+
+        $newerPost = Post::query()->create([
+            'title' => 'Newer post',
+            'content' => 'Newer content',
+            'user_id' => $postOwner->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this->getJson('/api/posts');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $newerPost->id)
+            ->assertJsonPath('data.1.id', $olderPost->id);
+    }
+
     public function test_authenticated_user_can_get_a_specific_post_with_all_content_blocks(): void
     {
         $user = User::factory()->create([

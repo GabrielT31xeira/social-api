@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api;
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\api\post\CreatRequest;
+use Illuminate\Http\Request;
 use App\Http\Requests\api\post\PostReactionRequest;
 use App\Http\Resources\PostListResource;
 use App\Http\Resources\PostResource;
@@ -19,9 +20,13 @@ class PostController extends Controller
         $this->postService = $postService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $posts = $this->postService->index();
+        $sort = $request->validate([
+            'sort' => ['nullable', 'in:recent,best_rated,worst_rated'],
+        ])['sort'] ?? 'recent';
+
+        $posts = $this->postService->index($sort);
         $posts->setCollection(
             $posts->getCollection()->map(fn ($post) => new PostListResource($post))
         );
@@ -29,9 +34,13 @@ class PostController extends Controller
         return ApiResponse::successPaginate($posts);
     }
 
-    public function getByUser(string $user_id)
+    public function getByUser(Request $request, string $user_id)
     {
-        $posts = $this->postService->getByUser($user_id);
+        $sort = $request->validate([
+            'sort' => ['nullable', 'in:recent,best_rated,worst_rated'],
+        ])['sort'] ?? 'recent';
+
+        $posts = $this->postService->getByUser($user_id, $sort);
         $posts->setCollection(
             $posts->getCollection()->map(fn ($post) => new PostListResource($post))
         );

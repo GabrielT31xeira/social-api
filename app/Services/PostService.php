@@ -11,15 +11,15 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class PostService
 {
-    public function index()
+    public function index(string $sort = 'recent')
     {
         return $this->decoratePaginatorWithReaction(
-            $this->baseQuery()->paginate(10),
+            $this->applySort($this->baseQuery(), $sort)->paginate(10),
             auth()->id()
         );
     }
 
-    public function getByUser(string $userId)
+    public function getByUser(string $userId, string $sort = 'recent')
     {
         $userExists = User::query()
             ->where('id', $userId)
@@ -30,9 +30,10 @@ class PostService
         }
 
         return $this->decoratePaginatorWithReaction(
-            $this->baseQuery()
-            ->where('user_id', $userId)
-            ->paginate(10),
+            $this->applySort(
+                $this->baseQuery()->where('user_id', $userId),
+                $sort
+            )->paginate(10),
             auth()->id()
         );
     }
@@ -138,8 +139,7 @@ class PostService
                 'comments',
                 'reactions as likes_count' => fn ($query) => $query->where('type', 'like'),
                 'reactions as dislikes_count' => fn ($query) => $query->where('type', 'dislike'),
-            ])
-            ->latest();
+            ]);
     }
 
     private function normalizeContentBlocks(array $data): array
@@ -151,6 +151,21 @@ class PostService
         }
 
         return [$data['content']];
+    }
+
+    private function applySort($query, string $sort)
+    {
+        return match ($sort) {
+            'best_rated' => $query
+                ->orderByRaw('(likes_count - dislikes_count) DESC')
+                ->orderByDesc('likes_count')
+                ->latest(),
+            'worst_rated' => $query
+                ->orderByRaw('(dislikes_count - likes_count) DESC')
+                ->orderByDesc('dislikes_count')
+                ->latest(),
+            default => $query->latest(),
+        };
     }
 
     private function decoratePaginatorWithReaction($paginator, ?string $userId)
