@@ -19,6 +19,9 @@ class PostResource extends JsonResource
             'contents' => $this->content_blocks,
             'content_blocks_count' => $this->content_blocks_count,
             'comments_count' => $this->comments_count,
+            'likes_count' => $this->likes_count ?? 0,
+            'dislikes_count' => $this->dislikes_count ?? 0,
+            'my_reaction' => $this->my_reaction,
             'user' => [
                 'id' => $this->user->id ?? null,
                 'char_name' => $this->user->char_name ?? null,

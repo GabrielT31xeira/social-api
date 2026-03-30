@@ -7,6 +7,14 @@ return [
         'basic' => 'Erro por parte do servidor, tente novamente!',
         'not_found' => 'Post nao encontrado.',
     ],
+    'reaction' => [
+        'saved' => 'Reacao salva com sucesso.',
+        'removed' => 'Reacao removida com sucesso.',
+        'validation' => [
+            'required' => 'O tipo de reacao e obrigatorio.',
+            'in' => 'O tipo de reacao deve ser like ou dislike.',
+        ],
+    ],
     'validations' => [
         'title' => [
             'required' => 'O titulo do post e obrigatorio.',

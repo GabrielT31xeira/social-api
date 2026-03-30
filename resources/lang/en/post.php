@@ -7,6 +7,14 @@ return [
         "basic" => "Error to create post, try again!",
         "not_found" => "Post not found.",
     ],
+    'reaction' => [
+        'saved' => 'Reaction saved successfully.',
+        'removed' => 'Reaction removed successfully.',
+        'validation' => [
+            'required' => 'The reaction type is required.',
+            'in' => 'The reaction type must be like or dislike.',
+        ],
+    ],
     'validations' => [
         // TITLE
         'title' => [

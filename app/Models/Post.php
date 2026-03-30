@@ -46,6 +46,11 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(PostReaction::class);
+    }
+
     public function getContentBlocksAttribute(): array
     {
         return $this->parseContentBlocks($this->attributes['content'] ?? null);

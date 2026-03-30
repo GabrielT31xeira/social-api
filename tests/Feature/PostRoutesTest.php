@@ -136,6 +136,124 @@ class PostRoutesTest extends TestCase
             ->assertJsonPath('data.content_blocks_count', 3);
     }
 
+    public function test_authenticated_user_can_like_a_post(): void
+    {
+        $owner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $viewer = User::factory()->create([
+            'char_name' => 'post-viewer',
+        ]);
+
+        $post = Post::query()->create([
+            'title' => 'Reactable post',
+            'content' => 'Reactable content',
+            'user_id' => $owner->id,
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'en')
+            ->postJson('/api/posts/'.$post->id.'/reaction', [
+                'type' => 'like',
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('message', 'Reaction saved successfully.')
+            ->assertJsonPath('data.likes_count', 1)
+            ->assertJsonPath('data.dislikes_count', 0)
+            ->assertJsonPath('data.my_reaction', 'like');
+
+        $this->assertDatabaseHas('post_reaction', [
+            'post_id' => $post->id,
+            'user_id' => $viewer->id,
+            'type' => 'like',
+        ]);
+    }
+
+    public function test_authenticated_user_can_change_reaction_from_like_to_dislike(): void
+    {
+        $owner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $viewer = User::factory()->create([
+            'char_name' => 'post-viewer',
+        ]);
+
+        $post = Post::query()->create([
+            'title' => 'Reactable post',
+            'content' => 'Reactable content',
+            'user_id' => $owner->id,
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $this->postJson('/api/posts/'.$post->id.'/reaction', [
+            'type' => 'like',
+        ]);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'en')
+            ->postJson('/api/posts/'.$post->id.'/reaction', [
+                'type' => 'dislike',
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.likes_count', 0)
+            ->assertJsonPath('data.dislikes_count', 1)
+            ->assertJsonPath('data.my_reaction', 'dislike');
+
+        $this->assertDatabaseHas('post_reaction', [
+            'post_id' => $post->id,
+            'user_id' => $viewer->id,
+            'type' => 'dislike',
+        ]);
+    }
+
+    public function test_authenticated_user_can_remove_reaction_from_a_post(): void
+    {
+        $owner = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $viewer = User::factory()->create([
+            'char_name' => 'post-viewer',
+        ]);
+
+        $post = Post::query()->create([
+            'title' => 'Reactable post',
+            'content' => 'Reactable content',
+            'user_id' => $owner->id,
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $this->postJson('/api/posts/'.$post->id.'/reaction', [
+            'type' => 'dislike',
+        ]);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'en')
+            ->deleteJson('/api/posts/'.$post->id.'/reaction');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('message', 'Reaction removed successfully.')
+            ->assertJsonPath('data.likes_count', 0)
+            ->assertJsonPath('data.dislikes_count', 0)
+            ->assertJsonPath('data.my_reaction', null);
+
+        $this->assertDatabaseMissing('post_reaction', [
+            'post_id' => $post->id,
+            'user_id' => $viewer->id,
+        ]);
+    }
+
     public function test_get_posts_by_user_returns_404_when_user_does_not_exist(): void
     {
         $viewer = User::factory()->create([
