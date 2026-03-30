@@ -69,7 +69,7 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->deleteJson('/api/comments/'.$comment->id);
+            ->deleteJson('/api/comments/'.$comment->id.'/destroy');
 
         $response
             ->assertOk()
@@ -106,7 +106,7 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->deleteJson('/api/comments/'.$comment->id);
+            ->deleteJson('/api/comments/'.$comment->id.'/destroy');
 
         $response
             ->assertOk()
@@ -147,7 +147,7 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'pt-BR')
-            ->deleteJson('/api/comments/'.$comment->id);
+            ->deleteJson('/api/comments/'.$comment->id.'/destroy');
 
         $response
             ->assertStatus(404)
