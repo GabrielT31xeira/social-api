@@ -12,6 +12,75 @@ class PostRoutesTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_authenticated_user_can_get_paginated_posts_from_a_specific_user(): void
+    {
+        $targetUser = User::factory()->create([
+            'char_name' => 'target-user',
+        ]);
+
+        $otherUser = User::factory()->create([
+            'char_name' => 'other-user',
+        ]);
+
+        $viewer = User::factory()->create([
+            'char_name' => 'viewer-user',
+        ]);
+
+        $firstPost = Post::query()->create([
+            'title' => 'First target post',
+            'content' => 'First content',
+            'user_id' => $targetUser->id,
+        ]);
+
+        $secondPost = Post::query()->create([
+            'title' => 'Second target post',
+            'content' => 'Second content',
+            'user_id' => $targetUser->id,
+        ]);
+
+        Post::query()->create([
+            'title' => 'Other user post',
+            'content' => 'Other content',
+            'user_id' => $otherUser->id,
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'en')
+            ->getJson('/api/users/'.$targetUser->id.'/posts');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('meta.total', 2)
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment([
+                'id' => $firstPost->id,
+                'title' => 'First target post',
+            ])
+            ->assertJsonFragment([
+                'id' => $secondPost->id,
+                'title' => 'Second target post',
+            ]);
+    }
+
+    public function test_get_posts_by_user_returns_404_when_user_does_not_exist(): void
+    {
+        $viewer = User::factory()->create([
+            'char_name' => 'viewer-user',
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'pt-BR')
+            ->getJson('/api/users/00000000-0000-0000-0000-000000000000/posts');
+
+        $response
+            ->assertStatus(404)
+            ->assertJsonPath('message', 'Usuario nao encontrado.');
+    }
+
     public function test_authenticated_user_can_delete_own_post_with_english_message(): void
     {
         $user = User::factory()->create([

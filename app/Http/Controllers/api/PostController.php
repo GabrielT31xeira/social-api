@@ -24,6 +24,13 @@ class PostController extends Controller
         return ApiResponse::successPaginate($posts);
     }
 
+    public function getByUser(string $user_id)
+    {
+        $posts = $this->postService->getByUser($user_id);
+
+        return ApiResponse::successPaginate($posts);
+    }
+
     public function store(CreatRequest $request)
     {
         $post = $this->postService->store(
