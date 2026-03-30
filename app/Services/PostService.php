@@ -29,14 +29,30 @@ class PostService
             ->paginate(10);
     }
 
+    public function show(string $postId): Post
+    {
+        $post = $this->baseQuery()
+            ->where('id', $postId)
+            ->first();
+
+        if (!$post) {
+            throw new NotFoundHttpException(__('post.error.not_found'));
+        }
+
+        return $post;
+    }
+
     public function store(array $data, string $userId): Post
     {
         return DB::transaction(function () use ($data, $userId) {
-            return Post::create([
+            $post = Post::create([
                 'title' => $data['title'],
-                'content' => $data['content'],
+                'content' => json_encode($this->normalizeContentBlocks($data), JSON_UNESCAPED_UNICODE),
                 'user_id' => $userId,
             ]);
+
+            return $post->load('user:id,char_name,avatar_path')
+                ->loadCount('comments');
         });
     }
 
@@ -60,5 +76,16 @@ class PostService
         return Post::with(['user:id,char_name,avatar_path'])
             ->withCount('comments')
             ->latest();
+    }
+
+    private function normalizeContentBlocks(array $data): array
+    {
+        $contents = $data['contents'] ?? null;
+
+        if (is_array($contents) && $contents !== []) {
+            return array_values($contents);
+        }
+
+        return [$data['content']];
     }
 }

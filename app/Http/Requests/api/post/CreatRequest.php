@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests\api\post;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\ValidationException;
 
 class CreatRequest extends FormRequest
 {
@@ -24,6 +22,18 @@ class CreatRequest extends FormRequest
             ],
 
             'content' => [
+                'required_without:contents',
+                'nullable',
+                'string',
+                'min:5'
+            ],
+            'contents' => [
+                'required_without:content',
+                'nullable',
+                'array',
+                'min:1'
+            ],
+            'contents.*' => [
                 'required',
                 'string',
                 'min:5'
@@ -40,8 +50,16 @@ class CreatRequest extends FormRequest
             'title.max' => __('post.validations.title.max'),
 
             'content.required' => __('post.validations.content.required'),
+            'content.required_without' => __('post.validations.content.required'),
             'content.string' => __('post.validations.content.string'),
             'content.min' => __('post.validations.content.min'),
+
+            'contents.required_without' => __('post.validations.contents.required'),
+            'contents.array' => __('post.validations.contents.array'),
+            'contents.min' => __('post.validations.contents.min'),
+            'contents.*.required' => __('post.validations.contents.item_required'),
+            'contents.*.string' => __('post.validations.contents.item_string'),
+            'contents.*.min' => __('post.validations.contents.item_min'),
         ];
     }
 }

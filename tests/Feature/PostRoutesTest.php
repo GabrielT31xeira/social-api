@@ -12,6 +12,34 @@ class PostRoutesTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_authenticated_user_can_create_post_with_multiple_content_blocks(): void
+    {
+        $user = User::factory()->create([
+            'char_name' => 'post-creator',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'en')
+            ->postJson('/api/post/store', [
+                'title' => 'Structured post',
+                'contents' => [
+                    'First content block',
+                    'Second content block',
+                    'Third content block',
+                ],
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.title', 'Structured post')
+            ->assertJsonPath('data.content', 'First content block')
+            ->assertJsonPath('data.contents.0', 'First content block')
+            ->assertJsonPath('data.contents.1', 'Second content block')
+            ->assertJsonPath('data.content_blocks_count', 3);
+    }
+
     public function test_authenticated_user_can_get_paginated_posts_from_a_specific_user(): void
     {
         $targetUser = User::factory()->create([
@@ -28,13 +56,19 @@ class PostRoutesTest extends TestCase
 
         $firstPost = Post::query()->create([
             'title' => 'First target post',
-            'content' => 'First content',
+            'content' => json_encode([
+                'First content',
+                'Hidden second block',
+            ], JSON_UNESCAPED_UNICODE),
             'user_id' => $targetUser->id,
         ]);
 
         $secondPost = Post::query()->create([
             'title' => 'Second target post',
-            'content' => 'Second content',
+            'content' => json_encode([
+                'Second content',
+                'Another hidden block',
+            ], JSON_UNESCAPED_UNICODE),
             'user_id' => $targetUser->id,
         ]);
 
@@ -57,11 +91,49 @@ class PostRoutesTest extends TestCase
             ->assertJsonFragment([
                 'id' => $firstPost->id,
                 'title' => 'First target post',
+                'content' => 'First content',
             ])
             ->assertJsonFragment([
                 'id' => $secondPost->id,
                 'title' => 'Second target post',
+                'content' => 'Second content',
             ]);
+    }
+
+    public function test_authenticated_user_can_get_a_specific_post_with_all_content_blocks(): void
+    {
+        $user = User::factory()->create([
+            'char_name' => 'post-owner',
+        ]);
+
+        $viewer = User::factory()->create([
+            'char_name' => 'post-viewer',
+        ]);
+
+        $post = Post::query()->create([
+            'title' => 'Detailed post',
+            'content' => json_encode([
+                'First content block',
+                'Second content block',
+                'Third content block',
+            ], JSON_UNESCAPED_UNICODE),
+            'user_id' => $user->id,
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this
+            ->withHeader('Accept-Language', 'en')
+            ->getJson('/api/posts/'.$post->id);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.id', $post->id)
+            ->assertJsonPath('data.content', 'First content block')
+            ->assertJsonPath('data.contents.0', 'First content block')
+            ->assertJsonPath('data.contents.1', 'Second content block')
+            ->assertJsonPath('data.contents.2', 'Third content block')
+            ->assertJsonPath('data.content_blocks_count', 3);
     }
 
     public function test_get_posts_by_user_returns_404_when_user_does_not_exist(): void

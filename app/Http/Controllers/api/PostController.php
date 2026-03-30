@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api;
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\api\post\CreatRequest;
+use App\Http\Resources\PostListResource;
 use App\Http\Resources\PostResource;
 use App\Services\PostService;
 
@@ -20,6 +21,9 @@ class PostController extends Controller
     public function index()
     {
         $posts = $this->postService->index();
+        $posts->setCollection(
+            $posts->getCollection()->map(fn ($post) => new PostListResource($post))
+        );
 
         return ApiResponse::successPaginate($posts);
     }
@@ -27,8 +31,20 @@ class PostController extends Controller
     public function getByUser(string $user_id)
     {
         $posts = $this->postService->getByUser($user_id);
+        $posts->setCollection(
+            $posts->getCollection()->map(fn ($post) => new PostListResource($post))
+        );
 
         return ApiResponse::successPaginate($posts);
+    }
+
+    public function show(string $post_id)
+    {
+        $post = $this->postService->show($post_id);
+
+        return ApiResponse::successWithBody(
+            new PostResource($post)
+        );
     }
 
     public function store(CreatRequest $request)

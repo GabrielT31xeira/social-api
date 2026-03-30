@@ -24,6 +24,12 @@ class Post extends Model
         'user_id',
     ];
 
+    protected $appends = [
+        'content_blocks',
+        'first_content_block',
+        'content_blocks_count',
+    ];
+
     /*
     |--------------------------------------------------------------------------
     | Relationships
@@ -40,6 +46,21 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function getContentBlocksAttribute(): array
+    {
+        return $this->parseContentBlocks($this->attributes['content'] ?? null);
+    }
+
+    public function getFirstContentBlockAttribute(): ?string
+    {
+        return $this->content_blocks[0] ?? null;
+    }
+
+    public function getContentBlocksCountAttribute(): int
+    {
+        return count($this->content_blocks);
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -48,5 +69,20 @@ class Post extends Model
                 $model->id = Str::uuid();
             }
         });
+    }
+
+    private function parseContentBlocks(?string $content): array
+    {
+        if (!$content) {
+            return [];
+        }
+
+        $decoded = json_decode($content, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return array_values(array_filter($decoded, fn ($item) => is_string($item) && $item !== ''));
+        }
+
+        return [$content];
     }
 }
