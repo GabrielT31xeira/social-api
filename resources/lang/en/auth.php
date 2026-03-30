@@ -27,6 +27,12 @@ return [
     'password_min'       => 'The password must be at least :min characters.',
     'password_confirmed' => 'The password confirmation does not match.',
 
+    // avatar
+    'avatar_required' => 'The avatar is required.',
+    'avatar_image'    => 'The avatar must be an image.',
+    'avatar_mimes'    => 'The avatar must be a file of type: jpg, jpeg, png, webp.',
+    'avatar_max'      => 'The avatar may not be greater than :max kilobytes.',
+
     // Register
     'register_success' => 'User registered successfully!',
     'register_error'   => 'Registration failed, please try again!',
@@ -43,6 +49,10 @@ return [
     // Logout
     'logout_success'   => 'Logout successful!',
     'logout_error'     => 'Failed to logout, please try again!',
+
+    // Avatar
+    'avatar_updated'   => 'Avatar updated successfully!',
+    'avatar_removed'   => 'Avatar removed successfully!',
 
     'unauthenticated' => 'Unauthenticated.',
 ];

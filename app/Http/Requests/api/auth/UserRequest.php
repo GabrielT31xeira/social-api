@@ -40,6 +40,12 @@ class UserRequest extends FormRequest
                 'string',
                 'min:6',
                 'confirmed'
+            ],
+            'avatar' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048'
             ]
         ];
     }
@@ -72,6 +78,11 @@ class UserRequest extends FormRequest
             'password.string'        => __('auth.password_string'),
             'password.min'           => __('auth.password_min'),
             'password.confirmed'     => __('auth.password_confirmed'),
+
+            // avatar
+            'avatar.image'           => __('auth.avatar_image'),
+            'avatar.mimes'           => __('auth.avatar_mimes'),
+            'avatar.max'             => __('auth.avatar_max'),
         ];
     }
 

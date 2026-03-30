@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -29,7 +30,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'char_name'
+        'char_name',
+        'avatar_path',
     ];
 
     /**
@@ -40,6 +42,11 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'avatar_path',
+    ];
+
+    protected $appends = [
+        'avatar_url',
     ];
 
     /**
@@ -53,6 +60,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->avatar_path);
     }
 
     protected static function boot()

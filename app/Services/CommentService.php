@@ -16,7 +16,7 @@ class CommentService
             ->findOrFail($post_id);
 
         $comments = Comment::query()
-            ->with(['user:id,char_name'])
+            ->with(['user:id,char_name,avatar_path'])
             ->where('post_id', $post_id)
             ->latest()
             ->paginate(10);
@@ -35,7 +35,7 @@ class CommentService
                 'post_id' => $data['post_id'],
                 'user_id' => auth()->id(),
             ]);
-        });
+        })->load('user:id,char_name,avatar_path');
     }
 
     public function destroy(string $commentId, string $userId): void

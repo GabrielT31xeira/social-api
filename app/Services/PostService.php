@@ -10,7 +10,7 @@ class PostService
 {
     public function index()
     {
-        return Post::with(['user:id,char_name'])
+        return Post::with(['user:id,char_name,avatar_path'])
             ->withCount('comments')
             ->latest()
             ->paginate(10);
