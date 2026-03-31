@@ -3,8 +3,8 @@ services:
   # Container for Nginx
   nginx:
     build:
-      context: .
-      dockerfile: ./nginx/docker/Dockerfile
+      context: ./nginx/docker
+      dockerfile: Dockerfile
       args:
         - UID=${UID:-1000}
         - GID=${GID:-1000}
@@ -14,6 +14,7 @@ services:
       - "./:/var/www/html"
       - "./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro"
     depends_on:
+      - app
       - db
     networks:
       - test_net
@@ -21,8 +22,8 @@ services:
   # Container for Laravel
   app:
     build:
-      context: .
-      dockerfile: ./php/Dockerfile
+      context: ./php
+      dockerfile: Dockerfile
       args:
         - UID=${UID:-1000}
         - GID=${GID:-1000}
@@ -35,7 +36,7 @@ services:
       - "DB_DATABASE=testdb"
       - "DB_USERNAME=testroot"
       - "DB_PASSWORD=secret!132"
-    command: bash -c "composer install && cp .env.example .env && php artisan key:generate && php-fpm"
+    command: bash /var/www/html/php/start.sh
     depends_on:
       - db
     networks:
