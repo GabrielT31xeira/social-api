@@ -9,6 +9,7 @@ use App\Http\Requests\api\auth\LoginRequest;
 use App\Http\Requests\api\auth\UserRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthenticateService;
+use Illuminate\Http\Request;
 
 class AuthenticateController extends Controller
 {
@@ -37,9 +38,9 @@ class AuthenticateController extends Controller
         ], __('auth.login_success'));
     }
 
-    public function refreshToken()
+    public function refreshToken(Request $request)
     {
-        $token = $this->authService->refreshToken();
+        $token = $this->authService->refreshToken($request->user());
 
         return ApiResponse::successWithBody([
             'access_token' => $token,
@@ -47,23 +48,26 @@ class AuthenticateController extends Controller
         ], __('auth.refresh_success'));
     }
 
-    public function me()
+    public function me(Request $request)
     {
         return ApiResponse::successWithBody(
-            new UserResource($this->authService->me())
+            new UserResource($request->user())
         );
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        $this->authService->logout();
+        $this->authService->logout($request->user());
 
         return ApiResponse::success(__('auth.logout_success'));
     }
 
     public function updateAvatar(AvatarRequest $request)
     {
-        $user = $this->authService->updateAvatar($request->file('avatar'));
+        $user = $this->authService->updateAvatar(
+            $request->user(),
+            $request->file('avatar')
+        );
 
         return ApiResponse::successWithBody(
             new UserResource($user),
@@ -71,9 +75,9 @@ class AuthenticateController extends Controller
         );
     }
 
-    public function removeAvatar()
+    public function removeAvatar(Request $request)
     {
-        $user = $this->authService->removeAvatar();
+        $user = $this->authService->removeAvatar($request->user());
 
         return ApiResponse::successWithBody(
             new UserResource($user),

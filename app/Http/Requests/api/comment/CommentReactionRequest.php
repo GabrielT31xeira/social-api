@@ -2,11 +2,9 @@
 
 namespace App\Http\Requests\api\comment;
 
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\ValidationException;
+use App\Http\Requests\ApiFormRequest;
 
-class CommentReactionRequest extends FormRequest
+class CommentReactionRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
@@ -29,16 +27,5 @@ class CommentReactionRequest extends FormRequest
             'type.required' => __('comment.reaction.validation.required'),
             'type.in' => __('comment.reaction.validation.in'),
         ];
-    }
-
-    protected function failedValidation(Validator $validator)
-    {
-        $response = response()->json([
-            'success' => false,
-            'message' => $validator->errors()->first(),
-            'errors' => $validator->errors(),
-        ], 422);
-
-        throw new ValidationException($validator, $response);
     }
 }

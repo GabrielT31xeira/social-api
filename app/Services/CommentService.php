@@ -5,85 +5,53 @@ namespace App\Services;
 use App\Models\Comment;
 use App\Models\CommentReaction;
 use App\Models\Post;
-use Illuminate\Support\Collection;
+use App\Services\Concerns\InteractsWithReactions;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CommentService
 {
-    public function getByPost(string $post_id, string $sort = 'recent')
-    {
-        $post = Post::query()
-            ->select(['id', 'title', 'content'])
-            ->findOrFail($post_id);
+    use InteractsWithReactions;
 
-        $comments = $this->decoratePaginatorWithReaction(
-            $this->applySort(
-                $this->baseQuery()->where('post_id', $post_id),
+    public function getByPost(Post $post, string $sort = 'recent', ?string $viewerId = null): LengthAwarePaginator
+    {
+        return $this->decoratePaginatorWithReactions(
+            $this->applyReactionSort(
+                $this->baseQuery()->where('post_id', $post->id),
                 $sort
             )->paginate(10),
-            auth()->id()
+            $viewerId,
+            CommentReaction::class,
+            'comment_id'
         );
-
-        return [
-            'post' => $post,
-            'comments' => $comments,
-        ];
     }
 
-    public function create(array $data): Comment
+    public function create(Post $post, array $data, string $userId): Comment
     {
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($post, $data, $userId) {
             $comment = Comment::create([
                 'description' => $data['description'],
-                'post_id' => $data['post_id'],
-                'user_id' => auth()->id(),
+                'post_id' => $post->id,
+                'user_id' => $userId,
             ]);
 
-            return $this->decorateCommentWithReaction(
-                $comment->load('user:id,char_name,avatar_path')
-                    ->loadCount([
-                        'reactions as likes_count' => fn ($query) => $query->where('type', 'like'),
-                        'reactions as dislikes_count' => fn ($query) => $query->where('type', 'dislike'),
-                    ]),
-                auth()->id()
-            );
+            return $this->show($comment, $userId);
         });
     }
 
-    public function destroy(string $commentId, string $userId): void
+    public function destroy(Comment $comment): void
     {
-        $comment = Comment::query()
-            ->with('post:id,user_id')
-            ->where('id', $commentId)
-            ->first();
-
-        if (
-            !$comment ||
-            ($comment->user_id !== $userId && $comment->post?->user_id !== $userId)
-        ) {
-            throw new NotFoundHttpException(__('comment.error.not_found'));
-        }
-
         DB::transaction(function () use ($comment) {
             $comment->delete();
         });
     }
 
-    public function react(string $commentId, string $userId, string $type): Comment
+    public function react(Comment $comment, string $userId, string $type): Comment
     {
-        $comment = Comment::query()
-            ->where('id', $commentId)
-            ->first();
-
-        if (!$comment) {
-            throw new NotFoundHttpException(__('comment.error.not_found'));
-        }
-
-        DB::transaction(function () use ($commentId, $userId, $type) {
+        DB::transaction(function () use ($comment, $userId, $type) {
             CommentReaction::query()->updateOrCreate(
                 [
-                    'comment_id' => $commentId,
+                    'comment_id' => $comment->id,
                     'user_id' => $userId,
                 ],
                 [
@@ -92,40 +60,34 @@ class CommentService
             );
         });
 
-        return $this->show($commentId, $userId);
+        return $this->show($comment->fresh(), $userId);
     }
 
-    public function removeReaction(string $commentId, string $userId): Comment
+    public function removeReaction(Comment $comment, string $userId): Comment
     {
-        $comment = Comment::query()
-            ->where('id', $commentId)
-            ->first();
-
-        if (!$comment) {
-            throw new NotFoundHttpException(__('comment.error.not_found'));
-        }
-
-        DB::transaction(function () use ($commentId, $userId) {
+        DB::transaction(function () use ($comment, $userId) {
             CommentReaction::query()
-                ->where('comment_id', $commentId)
+                ->where('comment_id', $comment->id)
                 ->where('user_id', $userId)
                 ->delete();
         });
 
-        return $this->show($commentId, $userId);
+        return $this->show($comment->fresh(), $userId);
     }
 
-    public function show(string $commentId, ?string $userId = null): Comment
+    public function show(Comment $comment, ?string $userId = null): Comment
     {
-        $comment = $this->baseQuery()
-            ->where('id', $commentId)
-            ->first();
+        return $this->decorateModelWithReaction(
+            $this->loadComment($comment),
+            $userId,
+            CommentReaction::class,
+            'comment_id'
+        );
+    }
 
-        if (!$comment) {
-            throw new NotFoundHttpException(__('comment.error.not_found'));
-        }
-
-        return $this->decorateCommentWithReaction($comment, $userId ?? auth()->id());
+    public function summarizePost(Post $post): Post
+    {
+        return $post->loadMissing('user:id,char_name,avatar_path');
     }
 
     private function baseQuery()
@@ -138,48 +100,12 @@ class CommentService
             ]);
     }
 
-    private function applySort($query, string $sort)
+    private function loadComment(Comment $comment): Comment
     {
-        return match ($sort) {
-            'best_rated' => $query
-                ->orderByRaw('(likes_count - dislikes_count) DESC')
-                ->orderByDesc('likes_count')
-                ->latest(),
-            'worst_rated' => $query
-                ->orderByRaw('(dislikes_count - likes_count) DESC')
-                ->orderByDesc('dislikes_count')
-                ->latest(),
-            default => $query->latest(),
-        };
-    }
-
-    private function decoratePaginatorWithReaction($paginator, ?string $userId)
-    {
-        $paginator->setCollection(
-            $this->decorateCollectionWithReaction($paginator->getCollection(), $userId)
-        );
-
-        return $paginator;
-    }
-
-    private function decorateCommentWithReaction(Comment $comment, ?string $userId): Comment
-    {
-        return $this->decorateCollectionWithReaction(collect([$comment]), $userId)->first();
-    }
-
-    private function decorateCollectionWithReaction(Collection $comments, ?string $userId): Collection
-    {
-        if (!$userId || $comments->isEmpty()) {
-            return $comments->each(fn (Comment $comment) => $comment->setAttribute('my_reaction', null));
-        }
-
-        $reactions = CommentReaction::query()
-            ->where('user_id', $userId)
-            ->whereIn('comment_id', $comments->pluck('id'))
-            ->pluck('type', 'comment_id');
-
-        return $comments->each(function (Comment $comment) use ($reactions) {
-            $comment->setAttribute('my_reaction', $reactions[$comment->id] ?? null);
-        });
+        return $comment->loadMissing('user:id,char_name,avatar_path')
+            ->loadCount([
+                'reactions as likes_count' => fn ($query) => $query->where('type', 'like'),
+                'reactions as dislikes_count' => fn ($query) => $query->where('type', 'dislike'),
+            ]);
     }
 }

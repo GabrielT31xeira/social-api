@@ -22,7 +22,7 @@ class PostRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->postJson('/api/post/store', [
+            ->postJson('/api/posts', [
                 'title' => 'Structured post',
                 'contents' => [
                     'First content block',
@@ -131,11 +131,11 @@ class PostRoutesTest extends TestCase
         ]);
 
         Sanctum::actingAs($reactorOne);
-        $this->postJson('/api/posts/'.$bestPost->id.'/reaction', ['type' => 'like']);
-        $this->postJson('/api/posts/'.$worstPost->id.'/reaction', ['type' => 'dislike']);
+        $this->postJson('/api/posts/'.$bestPost->id.'/reactions', ['type' => 'like']);
+        $this->postJson('/api/posts/'.$worstPost->id.'/reactions', ['type' => 'dislike']);
 
         Sanctum::actingAs($reactorTwo);
-        $this->postJson('/api/posts/'.$bestPost->id.'/reaction', ['type' => 'like']);
+        $this->postJson('/api/posts/'.$bestPost->id.'/reactions', ['type' => 'like']);
 
         Sanctum::actingAs($viewer);
 
@@ -178,11 +178,11 @@ class PostRoutesTest extends TestCase
         ]);
 
         Sanctum::actingAs($reactorOne);
-        $this->postJson('/api/posts/'.$bestPost->id.'/reaction', ['type' => 'like']);
-        $this->postJson('/api/posts/'.$worstPost->id.'/reaction', ['type' => 'dislike']);
+        $this->postJson('/api/posts/'.$bestPost->id.'/reactions', ['type' => 'like']);
+        $this->postJson('/api/posts/'.$worstPost->id.'/reactions', ['type' => 'dislike']);
 
         Sanctum::actingAs($reactorTwo);
-        $this->postJson('/api/posts/'.$worstPost->id.'/reaction', ['type' => 'dislike']);
+        $this->postJson('/api/posts/'.$worstPost->id.'/reactions', ['type' => 'dislike']);
 
         Sanctum::actingAs($viewer);
 
@@ -208,17 +208,21 @@ class PostRoutesTest extends TestCase
             'title' => 'Older post',
             'content' => 'Older content',
             'user_id' => $postOwner->id,
+        ]);
+        $olderPost->forceFill([
             'created_at' => now()->subMinute(),
             'updated_at' => now()->subMinute(),
-        ]);
+        ])->save();
 
         $newerPost = Post::query()->create([
             'title' => 'Newer post',
             'content' => 'Newer content',
             'user_id' => $postOwner->id,
+        ]);
+        $newerPost->forceFill([
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ])->save();
 
         Sanctum::actingAs($viewer);
 
@@ -286,7 +290,7 @@ class PostRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->postJson('/api/posts/'.$post->id.'/reaction', [
+            ->postJson('/api/posts/'.$post->id.'/reactions', [
                 'type' => 'like',
             ]);
 
@@ -322,13 +326,13 @@ class PostRoutesTest extends TestCase
 
         Sanctum::actingAs($viewer);
 
-        $this->postJson('/api/posts/'.$post->id.'/reaction', [
+        $this->postJson('/api/posts/'.$post->id.'/reactions', [
             'type' => 'like',
         ]);
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->postJson('/api/posts/'.$post->id.'/reaction', [
+            ->postJson('/api/posts/'.$post->id.'/reactions', [
                 'type' => 'dislike',
             ]);
 
@@ -363,13 +367,13 @@ class PostRoutesTest extends TestCase
 
         Sanctum::actingAs($viewer);
 
-        $this->postJson('/api/posts/'.$post->id.'/reaction', [
+        $this->postJson('/api/posts/'.$post->id.'/reactions', [
             'type' => 'dislike',
         ]);
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->deleteJson('/api/posts/'.$post->id.'/reaction');
+            ->deleteJson('/api/posts/'.$post->id.'/reactions');
 
         $response
             ->assertOk()
@@ -417,7 +421,7 @@ class PostRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->deleteJson('/api/posts/'.$post->id.'/destroy');
+            ->deleteJson('/api/posts/'.$post->id);
 
         $response
             ->assertOk()
@@ -448,11 +452,11 @@ class PostRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'pt-BR')
-            ->deleteJson('/api/posts/'.$post->id.'/destroy');
+            ->deleteJson('/api/posts/'.$post->id);
 
         $response
-            ->assertStatus(404)
-            ->assertJsonPath('message', 'Post nao encontrado.');
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'Acesso negado.');
 
         $this->assertDatabaseHas('post', [
             'id' => $post->id,

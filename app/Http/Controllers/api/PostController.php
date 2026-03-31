@@ -4,29 +4,28 @@ namespace App\Http\Controllers\api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\api\post\CreatRequest;
-use Illuminate\Http\Request;
+use App\Http\Requests\api\post\PostIndexRequest;
 use App\Http\Requests\api\post\PostReactionRequest;
+use App\Http\Requests\api\post\StorePostRequest;
 use App\Http\Resources\PostListResource;
 use App\Http\Resources\PostResource;
+use App\Models\Post;
+use App\Models\User;
 use App\Services\PostService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
-    protected $postService;
+    public function __construct(
+        private PostService $postService
+    ) {}
 
-    public function __construct(PostService $postService)
+    public function index(PostIndexRequest $request)
     {
-        $this->postService = $postService;
-    }
+        $sort = $request->validated()['sort'] ?? 'recent';
 
-    public function index(Request $request)
-    {
-        $sort = $request->validate([
-            'sort' => ['nullable', 'in:recent,best_rated,worst_rated'],
-        ])['sort'] ?? 'recent';
-
-        $posts = $this->postService->index($sort);
+        $posts = $this->postService->index($sort, $request->user()?->id);
         $posts->setCollection(
             $posts->getCollection()->map(fn ($post) => new PostListResource($post))
         );
@@ -34,13 +33,11 @@ class PostController extends Controller
         return ApiResponse::successPaginate($posts);
     }
 
-    public function getByUser(Request $request, string $user_id)
+    public function getByUser(PostIndexRequest $request, User $user)
     {
-        $sort = $request->validate([
-            'sort' => ['nullable', 'in:recent,best_rated,worst_rated'],
-        ])['sort'] ?? 'recent';
+        $sort = $request->validated()['sort'] ?? 'recent';
 
-        $posts = $this->postService->getByUser($user_id, $sort);
+        $posts = $this->postService->getByUser($user, $sort, $request->user()?->id);
         $posts->setCollection(
             $posts->getCollection()->map(fn ($post) => new PostListResource($post))
         );
@@ -48,20 +45,20 @@ class PostController extends Controller
         return ApiResponse::successPaginate($posts);
     }
 
-    public function show(string $post_id)
+    public function show(Request $request, Post $post)
     {
-        $post = $this->postService->show($post_id);
+        $post = $this->postService->show($post, $request->user()?->id);
 
         return ApiResponse::successWithBody(
             new PostResource($post)
         );
     }
 
-    public function store(CreatRequest $request)
+    public function store(StorePostRequest $request)
     {
         $post = $this->postService->store(
             $request->validated(),
-            auth()->id()
+            $request->user()->id
         );
 
         return ApiResponse::successWithBody(
@@ -70,18 +67,19 @@ class PostController extends Controller
         );
     }
 
-    public function destroy(string $post_id)
+    public function destroy(Request $request, Post $post)
     {
-        $this->postService->destroy($post_id, auth()->id());
+        Gate::forUser($request->user())->authorize('delete', $post);
+        $this->postService->destroy($post);
 
         return ApiResponse::success(__('post.destroy'));
     }
 
-    public function react(PostReactionRequest $request, string $post_id)
+    public function react(PostReactionRequest $request, Post $post)
     {
         $post = $this->postService->react(
-            $post_id,
-            auth()->id(),
+            $post,
+            $request->user()->id,
             $request->validated()['type']
         );
 
@@ -91,11 +89,11 @@ class PostController extends Controller
         );
     }
 
-    public function removeReaction(string $post_id)
+    public function removeReaction(Request $request, Post $post)
     {
         $post = $this->postService->removeReaction(
-            $post_id,
-            auth()->id()
+            $post,
+            $request->user()->id
         );
 
         return ApiResponse::successWithBody(

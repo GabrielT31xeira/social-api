@@ -5,50 +5,45 @@ namespace App\Services;
 use App\Models\Post;
 use App\Models\PostReaction;
 use App\Models\User;
-use Illuminate\Support\Collection;
+use App\Services\Concerns\InteractsWithReactions;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PostService
 {
-    public function index(string $sort = 'recent')
+    use InteractsWithReactions;
+
+    public function index(string $sort = 'recent', ?string $viewerId = null): LengthAwarePaginator
     {
-        return $this->decoratePaginatorWithReaction(
-            $this->applySort($this->baseQuery(), $sort)->paginate(10),
-            auth()->id()
+        return $this->decoratePaginatorWithReactions(
+            $this->applyReactionSort($this->baseQuery(), $sort)->paginate(10),
+            $viewerId,
+            PostReaction::class,
+            'post_id'
         );
     }
 
-    public function getByUser(string $userId, string $sort = 'recent')
+    public function getByUser(User $user, string $sort = 'recent', ?string $viewerId = null): LengthAwarePaginator
     {
-        $userExists = User::query()
-            ->where('id', $userId)
-            ->exists();
-
-        if (!$userExists) {
-            throw new NotFoundHttpException(__('auth.user_not_found'));
-        }
-
-        return $this->decoratePaginatorWithReaction(
-            $this->applySort(
-                $this->baseQuery()->where('user_id', $userId),
+        return $this->decoratePaginatorWithReactions(
+            $this->applyReactionSort(
+                $this->baseQuery()->where('user_id', $user->id),
                 $sort
             )->paginate(10),
-            auth()->id()
+            $viewerId,
+            PostReaction::class,
+            'post_id'
         );
     }
 
-    public function show(string $postId): Post
+    public function show(Post $post, ?string $viewerId = null): Post
     {
-        $post = $this->baseQuery()
-            ->where('id', $postId)
-            ->first();
-
-        if (!$post) {
-            throw new NotFoundHttpException(__('post.error.not_found'));
-        }
-
-        return $this->decoratePostWithReaction($post, auth()->id());
+        return $this->decorateModelWithReaction(
+            $this->loadPost($post),
+            $viewerId,
+            PostReaction::class,
+            'post_id'
+        );
     }
 
     public function store(array $data, string $userId): Post
@@ -60,32 +55,16 @@ class PostService
                 'user_id' => $userId,
             ]);
 
-            return $this->decoratePostWithReaction(
-                $post->load('user:id,char_name,avatar_path')
-                    ->loadCount([
-                        'comments',
-                        'reactions as likes_count' => fn ($query) => $query->where('type', 'like'),
-                        'reactions as dislikes_count' => fn ($query) => $query->where('type', 'dislike'),
-                    ]),
-                $userId
-            );
+            return $this->show($post, $userId);
         });
     }
 
-    public function react(string $postId, string $userId, string $type): Post
+    public function react(Post $post, string $userId, string $type): Post
     {
-        $post = Post::query()
-            ->where('id', $postId)
-            ->first();
-
-        if (!$post) {
-            throw new NotFoundHttpException(__('post.error.not_found'));
-        }
-
-        DB::transaction(function () use ($postId, $userId, $type) {
+        DB::transaction(function () use ($post, $userId, $type) {
             PostReaction::query()->updateOrCreate(
                 [
-                    'post_id' => $postId,
+                    'post_id' => $post->id,
                     'user_id' => $userId,
                 ],
                 [
@@ -94,39 +73,23 @@ class PostService
             );
         });
 
-        return $this->show($postId);
+        return $this->show($post->fresh(), $userId);
     }
 
-    public function removeReaction(string $postId, string $userId): Post
+    public function removeReaction(Post $post, string $userId): Post
     {
-        $post = Post::query()
-            ->where('id', $postId)
-            ->first();
-
-        if (!$post) {
-            throw new NotFoundHttpException(__('post.error.not_found'));
-        }
-
-        DB::transaction(function () use ($postId, $userId) {
+        DB::transaction(function () use ($post, $userId) {
             PostReaction::query()
-                ->where('post_id', $postId)
+                ->where('post_id', $post->id)
                 ->where('user_id', $userId)
                 ->delete();
         });
 
-        return $this->show($postId);
+        return $this->show($post->fresh(), $userId);
     }
 
-    public function destroy(string $postId, string $userId): void
+    public function destroy(Post $post): void
     {
-        $post = Post::query()
-            ->where('id', $postId)
-            ->first();
-
-        if (!$post || $post->user_id !== $userId) {
-            throw new NotFoundHttpException(__('post.error.not_found'));
-        }
-
         DB::transaction(function () use ($post) {
             $post->delete();
         });
@@ -134,7 +97,8 @@ class PostService
 
     private function baseQuery()
     {
-        return Post::with(['user:id,char_name,avatar_path'])
+        return Post::query()
+            ->with(['user:id,char_name,avatar_path'])
             ->withCount([
                 'comments',
                 'reactions as likes_count' => fn ($query) => $query->where('type', 'like'),
@@ -153,48 +117,13 @@ class PostService
         return [$data['content']];
     }
 
-    private function applySort($query, string $sort)
+    private function loadPost(Post $post): Post
     {
-        return match ($sort) {
-            'best_rated' => $query
-                ->orderByRaw('(likes_count - dislikes_count) DESC')
-                ->orderByDesc('likes_count')
-                ->latest(),
-            'worst_rated' => $query
-                ->orderByRaw('(dislikes_count - likes_count) DESC')
-                ->orderByDesc('dislikes_count')
-                ->latest(),
-            default => $query->latest(),
-        };
-    }
-
-    private function decoratePaginatorWithReaction($paginator, ?string $userId)
-    {
-        $paginator->setCollection(
-            $this->decorateCollectionWithReaction($paginator->getCollection(), $userId)
-        );
-
-        return $paginator;
-    }
-
-    private function decoratePostWithReaction(Post $post, ?string $userId): Post
-    {
-        return $this->decorateCollectionWithReaction(collect([$post]), $userId)->first();
-    }
-
-    private function decorateCollectionWithReaction(Collection $posts, ?string $userId): Collection
-    {
-        if (!$userId || $posts->isEmpty()) {
-            return $posts->each(fn (Post $post) => $post->setAttribute('my_reaction', null));
-        }
-
-        $reactions = PostReaction::query()
-            ->where('user_id', $userId)
-            ->whereIn('post_id', $posts->pluck('id'))
-            ->pluck('type', 'post_id');
-
-        return $posts->each(function (Post $post) use ($reactions) {
-            $post->setAttribute('my_reaction', $reactions[$post->id] ?? null);
-        });
+        return $post->loadMissing('user:id,char_name,avatar_path')
+            ->loadCount([
+                'comments',
+                'reactions as likes_count' => fn ($query) => $query->where('type', 'like'),
+                'reactions as dislikes_count' => fn ($query) => $query->where('type', 'dislike'),
+            ]);
     }
 }

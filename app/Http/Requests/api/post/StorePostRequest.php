@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\api\post;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class CreatRequest extends FormRequest
+class StorePostRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
@@ -18,25 +18,24 @@ class CreatRequest extends FormRequest
                 'required',
                 'string',
                 'min:3',
-                'max:255'
+                'max:255',
             ],
-
             'content' => [
                 'required_without:contents',
                 'nullable',
                 'string',
-                'min:5'
+                'min:5',
             ],
             'contents' => [
                 'required_without:content',
                 'nullable',
                 'array',
-                'min:1'
+                'min:1',
             ],
             'contents.*' => [
                 'required',
                 'string',
-                'min:5'
+                'min:5',
             ],
         ];
     }
@@ -48,12 +47,10 @@ class CreatRequest extends FormRequest
             'title.string' => __('post.validations.title.string'),
             'title.min' => __('post.validations.title.min'),
             'title.max' => __('post.validations.title.max'),
-
             'content.required' => __('post.validations.content.required'),
             'content.required_without' => __('post.validations.content.required'),
             'content.string' => __('post.validations.content.string'),
             'content.min' => __('post.validations.content.min'),
-
             'contents.required_without' => __('post.validations.contents.required'),
             'contents.array' => __('post.validations.contents.array'),
             'contents.min' => __('post.validations.contents.min'),

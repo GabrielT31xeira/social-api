@@ -27,7 +27,7 @@ class AuthAvatarRoutesTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonPath('data.id', $user->id)
+            ->assertJsonPath('data.id', (string) $user->id)
             ->assertJsonPath('data.char_name', 'profile-owner');
     }
 
@@ -44,7 +44,7 @@ class AuthAvatarRoutesTest extends TestCase
                 'email' => 'avatar@example.com',
                 'password' => 'secret123',
                 'password_confirmation' => 'secret123',
-                'avatar' => UploadedFile::fake()->image('avatar.jpg'),
+                'avatar' => $this->fakeAvatarUpload('avatar.png'),
             ]);
 
         $response
@@ -79,7 +79,7 @@ class AuthAvatarRoutesTest extends TestCase
             ->withHeader('Accept', 'application/json')
             ->withHeader('Accept-Language', 'en')
             ->post('/api/me/avatar', [
-                'avatar' => UploadedFile::fake()->image('new-avatar.png'),
+                'avatar' => $this->fakeAvatarUpload('new-avatar.png'),
             ]);
 
         $response
@@ -125,5 +125,13 @@ class AuthAvatarRoutesTest extends TestCase
 
         $this->assertNull($user->avatar_path);
         Storage::disk('public')->assertMissing('avatars/'.$user->id.'/avatar.jpg');
+    }
+
+    private function fakeAvatarUpload(string $name): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            $name,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WnPZXcAAAAASUVORK5CYII=')
+        );
     }
 }

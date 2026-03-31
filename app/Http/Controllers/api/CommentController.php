@@ -4,11 +4,16 @@ namespace App\Http\Controllers\api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\api\comment\CommentIndexRequest;
 use App\Http\Requests\api\comment\CommentReactionRequest;
 use App\Http\Requests\api\comment\StoreCommentRequest;
 use App\Http\Resources\CommentResource;
+use App\Http\Resources\PostSummaryResource;
+use App\Models\Comment;
+use App\Models\Post;
 use App\Services\CommentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CommentController extends Controller
 {
@@ -16,25 +21,32 @@ class CommentController extends Controller
         private CommentService $commentService
     ){}
 
-    public function getByPost(Request $request, string $post_id)
+    public function getByPost(CommentIndexRequest $request, Post $post)
     {
-        $sort = $request->validate([
-            'sort' => ['nullable', 'in:recent,best_rated,worst_rated'],
-        ])['sort'] ?? 'recent';
+        $sort = $request->validated()['sort'] ?? 'recent';
 
-        $payload = $this->commentService->getByPost($post_id, $sort);
-        $payload['comments']->setCollection(
-            $payload['comments']->getCollection()->map(fn ($comment) => new CommentResource($comment))
+        $comments = $this->commentService->getByPost(
+            $post,
+            $sort,
+            $request->user()?->id
+        );
+        $comments->setCollection(
+            $comments->getCollection()->map(fn ($comment) => new CommentResource($comment))
         );
 
-        return ApiResponse::successWithBody(
-            $payload
+        return ApiResponse::successPaginate(
+            $comments,
+            ['post' => new PostSummaryResource($this->commentService->summarizePost($post))]
         );
     }
 
-    public function store(StoreCommentRequest $request)
+    public function store(StoreCommentRequest $request, Post $post)
     {
-        $comment = $this->commentService->create($request->validated());
+        $comment = $this->commentService->create(
+            $post,
+            $request->validated(),
+            $request->user()->id
+        );
 
         return ApiResponse::successWithBody(
             new CommentResource($comment),
@@ -42,20 +54,21 @@ class CommentController extends Controller
         );
     }
 
-    public function destroy(string $comment_id)
+    public function destroy(Request $request, Comment $comment)
     {
-        $this->commentService->destroy($comment_id, auth()->id());
+        Gate::forUser($request->user())->authorize('delete', $comment);
+        $this->commentService->destroy($comment);
 
         return ApiResponse::success(
             __('comment.success.deleted')
         );
     }
 
-    public function react(CommentReactionRequest $request, string $comment_id)
+    public function react(CommentReactionRequest $request, Comment $comment)
     {
         $comment = $this->commentService->react(
-            $comment_id,
-            auth()->id(),
+            $comment,
+            $request->user()->id,
             $request->validated()['type']
         );
 
@@ -65,11 +78,11 @@ class CommentController extends Controller
         );
     }
 
-    public function removeReaction(string $comment_id)
+    public function removeReaction(Request $request, Comment $comment)
     {
         $comment = $this->commentService->removeReaction(
-            $comment_id,
-            auth()->id()
+            $comment,
+            $request->user()->id
         );
 
         return ApiResponse::successWithBody(

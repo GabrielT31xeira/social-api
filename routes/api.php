@@ -1,30 +1,36 @@
 <?php
 
+use App\Http\Controllers\api\AuthenticateController;
+use App\Http\Controllers\api\CommentController;
+use App\Http\Controllers\api\PostController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', [\App\Http\Controllers\api\AuthenticateController::class, 'register']);
-Route::post('/login', [\App\Http\Controllers\api\AuthenticateController::class, 'login']);
+Route::middleware('throttle:auth')->group(function () {
+    Route::post('/register', [AuthenticateController::class, 'register']);
+    Route::post('/login', [AuthenticateController::class, 'login']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/me', [\App\Http\Controllers\api\AuthenticateController::class, 'me']);
-    Route::post('/refresh', [\App\Http\Controllers\api\AuthenticateController::class, 'refreshToken']);
-    Route::post('/logout', [\App\Http\Controllers\api\AuthenticateController::class, 'logout']);
-    Route::post('/me/avatar', [\App\Http\Controllers\api\AuthenticateController::class, 'updateAvatar']);
-    Route::delete('/me/avatar', [\App\Http\Controllers\api\AuthenticateController::class, 'removeAvatar']);
+    Route::get('/me', [AuthenticateController::class, 'me']);
+    Route::post('/refresh', [AuthenticateController::class, 'refreshToken'])->middleware('throttle:auth');
+    Route::post('/logout', [AuthenticateController::class, 'logout']);
+    Route::post('/me/avatar', [AuthenticateController::class, 'updateAvatar']);
+    Route::delete('/me/avatar', [AuthenticateController::class, 'removeAvatar']);
 
-    // ********* POST *********
-    Route::get('/posts', [\App\Http\Controllers\api\PostController::class, 'index']);
-    Route::get('/posts/{post_id}', [\App\Http\Controllers\api\PostController::class, 'show']);
-    Route::post('/posts/{post_id}/reaction', [\App\Http\Controllers\api\PostController::class, 'react']);
-    Route::delete('/posts/{post_id}/reaction', [\App\Http\Controllers\api\PostController::class, 'removeReaction']);
-    Route::get('/users/{user_id}/posts', [\App\Http\Controllers\api\PostController::class, 'getByUser']);
-    Route::post('/post/store', [\App\Http\Controllers\api\PostController::class, 'store']);
-    Route::delete('/posts/{post_id}/destroy', [\App\Http\Controllers\api\PostController::class, 'destroy']);
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::post('/posts', [PostController::class, 'store']);
+    Route::get('/posts/{post}', [PostController::class, 'show']);
+    Route::delete('/posts/{post}', [PostController::class, 'destroy']);
+    Route::get('/users/{user}/posts', [PostController::class, 'getByUser']);
 
-    // ********* COMMENT *********
-    Route::get('/posts/{post_id}/comments', [\App\Http\Controllers\api\CommentController::class, 'getByPost']);
-    Route::post('/comments', [\App\Http\Controllers\api\CommentController::class, 'store']);
-    Route::post('/comments/{comment_id}/reaction', [\App\Http\Controllers\api\CommentController::class, 'react']);
-    Route::delete('/comments/{comment_id}/reaction', [\App\Http\Controllers\api\CommentController::class, 'removeReaction']);
-    Route::delete('/comments/{comment_id}/destroy', [\App\Http\Controllers\api\CommentController::class, 'destroy']);
+    Route::get('/posts/{post}/comments', [CommentController::class, 'getByPost']);
+    Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+
+    Route::middleware('throttle:reactions')->group(function () {
+        Route::post('/posts/{post}/reactions', [PostController::class, 'react']);
+        Route::delete('/posts/{post}/reactions', [PostController::class, 'removeReaction']);
+        Route::post('/comments/{comment}/reactions', [CommentController::class, 'react']);
+        Route::delete('/comments/{comment}/reactions', [CommentController::class, 'removeReaction']);
+    });
 });

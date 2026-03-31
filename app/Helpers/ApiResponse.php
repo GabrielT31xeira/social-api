@@ -6,10 +6,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ApiResponse
 {
-    public static function successPaginate($data)
+    public static function successPaginate($data, array $context = [], string $message = ''): \Illuminate\Http\JsonResponse
     {
-        return response()->json([
+        $payload = [
             'success' => true,
+            'message' => $message,
             'data' => $data->items(),
             'meta' => [
                 'current_page' => $data->currentPage(),
@@ -23,7 +24,13 @@ class ApiResponse
                 'prev' => $data->previousPageUrl(),
                 'next' => $data->nextPageUrl(),
             ],
-        ]);
+        ];
+
+        if ($context !== []) {
+            $payload['context'] = $context;
+        }
+
+        return response()->json($payload);
     }
 
     public static function successWithBody($data = null, string $message = ''): \Illuminate\Http\JsonResponse
@@ -54,8 +61,13 @@ class ApiResponse
 
     public static function validation($errors)
     {
+        $firstError = collect($errors)
+            ->flatten()
+            ->first();
+
         return response()->json([
             'success' => false,
+            'message' => $firstError,
             'errors' => $errors
         ], 422);
     }

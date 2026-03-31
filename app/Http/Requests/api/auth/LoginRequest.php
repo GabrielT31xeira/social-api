@@ -2,10 +2,9 @@
 
 namespace App\Http\Requests\api\auth;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\ValidationException;
+use App\Http\Requests\ApiFormRequest;
 
-class LoginRequest extends FormRequest
+class LoginRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
@@ -18,7 +17,6 @@ class LoginRequest extends FormRequest
             'char_name' => [
                 'required',
                 'string',
-                'exists:users,char_name'
             ],
             'password' => [
                 'required',
@@ -32,7 +30,6 @@ class LoginRequest extends FormRequest
         return [
             'char_name.required' => __('auth.char_name_required'),
             'char_name.string'   => __('auth.char_name_string'),
-            'char_name.exists'   => __('auth.user_not_found'),
             'password.required'  => __('auth.password_required'),
             'password.string'    => __('auth.password_string'),
         ];

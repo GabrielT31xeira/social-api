@@ -29,9 +29,8 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'pt-BR')
-            ->postJson('/api/comments', [
+            ->postJson('/api/posts/'.$post->id.'/comments', [
                 'description' => 'Meu comentario de teste',
-                'post_id' => $post->id,
             ]);
 
         $response
@@ -72,7 +71,7 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->deleteJson('/api/comments/'.$comment->id.'/destroy');
+            ->deleteJson('/api/comments/'.$comment->id);
 
         $response
             ->assertOk()
@@ -105,7 +104,7 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->postJson('/api/comments/'.$comment->id.'/reaction', [
+            ->postJson('/api/comments/'.$comment->id.'/reactions', [
                 'type' => 'like',
             ]);
 
@@ -143,13 +142,13 @@ class CommentRoutesTest extends TestCase
 
         Sanctum::actingAs($viewer);
 
-        $this->postJson('/api/comments/'.$comment->id.'/reaction', [
+        $this->postJson('/api/comments/'.$comment->id.'/reactions', [
             'type' => 'like',
         ]);
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->postJson('/api/comments/'.$comment->id.'/reaction', [
+            ->postJson('/api/comments/'.$comment->id.'/reactions', [
                 'type' => 'dislike',
             ]);
 
@@ -180,13 +179,13 @@ class CommentRoutesTest extends TestCase
 
         Sanctum::actingAs($viewer);
 
-        $this->postJson('/api/comments/'.$comment->id.'/reaction', [
+        $this->postJson('/api/comments/'.$comment->id.'/reactions', [
             'type' => 'dislike',
         ]);
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->deleteJson('/api/comments/'.$comment->id.'/reaction');
+            ->deleteJson('/api/comments/'.$comment->id.'/reactions');
 
         $response
             ->assertOk()
@@ -228,11 +227,11 @@ class CommentRoutesTest extends TestCase
         ]);
 
         Sanctum::actingAs($reactorOne);
-        $this->postJson('/api/comments/'.$bestComment->id.'/reaction', ['type' => 'like']);
-        $this->postJson('/api/comments/'.$worstComment->id.'/reaction', ['type' => 'dislike']);
+        $this->postJson('/api/comments/'.$bestComment->id.'/reactions', ['type' => 'like']);
+        $this->postJson('/api/comments/'.$worstComment->id.'/reactions', ['type' => 'dislike']);
 
         Sanctum::actingAs($reactorTwo);
-        $this->postJson('/api/comments/'.$bestComment->id.'/reaction', ['type' => 'like']);
+        $this->postJson('/api/comments/'.$bestComment->id.'/reactions', ['type' => 'like']);
 
         Sanctum::actingAs($viewer);
 
@@ -240,8 +239,9 @@ class CommentRoutesTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonPath('data.comments.data.0.id', $bestComment->id)
-            ->assertJsonPath('data.comments.data.1.id', $worstComment->id);
+            ->assertJsonPath('context.post.id', $post->id)
+            ->assertJsonPath('data.0.id', $bestComment->id)
+            ->assertJsonPath('data.1.id', $worstComment->id);
     }
 
     public function test_comments_by_post_can_be_sorted_by_worst_rated(): void
@@ -271,11 +271,11 @@ class CommentRoutesTest extends TestCase
         ]);
 
         Sanctum::actingAs($reactorOne);
-        $this->postJson('/api/comments/'.$bestComment->id.'/reaction', ['type' => 'like']);
-        $this->postJson('/api/comments/'.$worstComment->id.'/reaction', ['type' => 'dislike']);
+        $this->postJson('/api/comments/'.$bestComment->id.'/reactions', ['type' => 'like']);
+        $this->postJson('/api/comments/'.$worstComment->id.'/reactions', ['type' => 'dislike']);
 
         Sanctum::actingAs($reactorTwo);
-        $this->postJson('/api/comments/'.$worstComment->id.'/reaction', ['type' => 'dislike']);
+        $this->postJson('/api/comments/'.$worstComment->id.'/reactions', ['type' => 'dislike']);
 
         Sanctum::actingAs($viewer);
 
@@ -283,8 +283,9 @@ class CommentRoutesTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonPath('data.comments.data.0.id', $worstComment->id)
-            ->assertJsonPath('data.comments.data.1.id', $bestComment->id);
+            ->assertJsonPath('context.post.id', $post->id)
+            ->assertJsonPath('data.0.id', $worstComment->id)
+            ->assertJsonPath('data.1.id', $bestComment->id);
     }
 
     public function test_comments_by_post_use_recent_sort_by_default(): void
@@ -303,17 +304,21 @@ class CommentRoutesTest extends TestCase
             'description' => 'Older comment',
             'post_id' => $post->id,
             'user_id' => $commentOwner->id,
+        ]);
+        $olderComment->forceFill([
             'created_at' => now()->subMinute(),
             'updated_at' => now()->subMinute(),
-        ]);
+        ])->save();
 
         $newerComment = Comment::query()->create([
             'description' => 'Newer comment',
             'post_id' => $post->id,
             'user_id' => $commentOwner->id,
+        ]);
+        $newerComment->forceFill([
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ])->save();
 
         Sanctum::actingAs($viewer);
 
@@ -321,8 +326,9 @@ class CommentRoutesTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonPath('data.comments.data.0.id', $newerComment->id)
-            ->assertJsonPath('data.comments.data.1.id', $olderComment->id);
+            ->assertJsonPath('context.post.id', $post->id)
+            ->assertJsonPath('data.0.id', $newerComment->id)
+            ->assertJsonPath('data.1.id', $olderComment->id);
     }
 
     public function test_post_owner_can_delete_comment_from_another_user(): void
@@ -351,7 +357,7 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'en')
-            ->deleteJson('/api/comments/'.$comment->id.'/destroy');
+            ->deleteJson('/api/comments/'.$comment->id);
 
         $response
             ->assertOk()
@@ -392,11 +398,11 @@ class CommentRoutesTest extends TestCase
 
         $response = $this
             ->withHeader('Accept-Language', 'pt-BR')
-            ->deleteJson('/api/comments/'.$comment->id.'/destroy');
+            ->deleteJson('/api/comments/'.$comment->id);
 
         $response
-            ->assertStatus(404)
-            ->assertJsonPath('message', 'Comentario nao encontrado.');
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'Acesso negado.');
 
         $this->assertDatabaseHas('comment', [
             'id' => $comment->id,

@@ -2,10 +2,9 @@
 
 namespace App\Http\Requests\api\auth;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\ValidationException;
+use App\Http\Requests\ApiFormRequest;
 
-class UserRequest extends FormRequest
+class UserRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
@@ -86,14 +85,4 @@ class UserRequest extends FormRequest
         ];
     }
 
-    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
-    {
-        $response = response()->json([
-            'success' => false,
-            'message' => $validator->errors()->first(), // primeiro erro
-            'errors' => $validator->errors()            // lista completa
-        ], 422);
-
-        throw new ValidationException($validator, $response);
-    }
 }

@@ -3,11 +3,11 @@
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticateService
 {
@@ -49,7 +49,9 @@ class AuthenticateService
         $user = User::where('char_name', $data['char_name'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
-            throw new \Exception(__('auth.login_failed'));
+            throw ValidationException::withMessages([
+                'char_name' => [__('auth.login_failed')],
+            ]);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -60,38 +62,20 @@ class AuthenticateService
         ];
     }
 
-    public function refreshToken(): string
+    public function refreshToken(User $user): string
     {
-        $user = auth()->user();
-
-        if (!$user) {
-            throw new AuthenticationException();
-        }
-
         $user->currentAccessToken()->delete();
 
         return $user->createToken('auth_token')->plainTextToken;
     }
 
-    public function me(): User
+    public function logout(User $user): void
     {
-        return $this->getAuthenticatedUser();
-    }
-
-    public function logout(): void
-    {
-        $user = auth()->user();
-
-        if (!$user) {
-            throw new AuthenticationException();
-        }
-
         $user->currentAccessToken()->delete();
     }
 
-    public function updateAvatar(UploadedFile $avatar): User
+    public function updateAvatar(User $user, UploadedFile $avatar): User
     {
-        $user = $this->getAuthenticatedUser();
         $oldAvatarPath = $user->avatar_path;
         $newAvatarPath = null;
 
@@ -116,9 +100,8 @@ class AuthenticateService
         return $user->refresh();
     }
 
-    public function removeAvatar(): User
+    public function removeAvatar(User $user): User
     {
-        $user = $this->getAuthenticatedUser();
         $avatarPath = $user->avatar_path;
 
         if (!$avatarPath) {
@@ -133,18 +116,6 @@ class AuthenticateService
 
         return $user->refresh();
     }
-
-    private function getAuthenticatedUser(): User
-    {
-        $user = auth()->user();
-
-        if (!$user instanceof User) {
-            throw new AuthenticationException();
-        }
-
-        return $user;
-    }
-
     private function storeAvatarFile(User $user, UploadedFile $avatar): string
     {
         return $avatar->store('avatars/'.$user->id, 'public');

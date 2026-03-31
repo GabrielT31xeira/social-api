@@ -2,11 +2,9 @@
 
 namespace App\Http\Requests\api\auth;
 
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\ValidationException;
+use App\Http\Requests\ApiFormRequest;
 
-class AvatarRequest extends FormRequest
+class AvatarRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
@@ -33,16 +31,5 @@ class AvatarRequest extends FormRequest
             'avatar.mimes' => __('auth.avatar_mimes'),
             'avatar.max' => __('auth.avatar_max'),
         ];
-    }
-
-    protected function failedValidation(Validator $validator)
-    {
-        $response = response()->json([
-            'success' => false,
-            'message' => $validator->errors()->first(),
-            'errors' => $validator->errors(),
-        ], 422);
-
-        throw new ValidationException($validator, $response);
     }
 }
