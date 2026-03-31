@@ -1,59 +1,347 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Social API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API built with Laravel 12 for posts, comments, user avatars, and reactions.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+# PT-BR
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.4
+- Laravel 12
+- Sanctum
+- Nginx
+- MariaDB
+- Docker Compose
 
-## Learning Laravel
+## Subindo com Docker
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Requisitos
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- Docker Desktop ou Docker Engine
+- Docker Compose
 
-## Laravel Sponsors
+### 1. Suba os containers
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Na raiz do projeto:
 
-### Premium Partners
+```bash
+docker compose up --build -d
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Isso sobe:
 
-## Contributing
+- `app`: PHP-FPM com Laravel
+- `nginx`: servidor HTTP exposto em `http://localhost:84`
+- `db`: MariaDB exposto em `localhost:3316`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 2. Rode as migrations
 
-## Code of Conduct
+Depois que os containers estiverem prontos:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+docker compose exec app php artisan migrate --force
+```
 
-## Security Vulnerabilities
+### 3. Crie o link do storage
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Necessario para servir avatars em `/storage/...`:
 
-## License
+```bash
+docker compose exec app php artisan storage:link
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 4. Acesse a aplicacao
+
+- API: `http://localhost:84`
+- Exemplo de health check Laravel: `http://localhost:84/up`
+
+## Primeira subida
+
+Se quiser garantir um ambiente limpo:
+
+```bash
+docker compose down -v
+docker compose up --build -d
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan storage:link
+```
+
+## Comandos uteis
+
+### Ver logs
+
+```bash
+docker compose logs -f
+```
+
+Ou apenas do app:
+
+```bash
+docker compose logs -f app
+```
+
+### Entrar no container PHP
+
+```bash
+docker compose exec app bash
+```
+
+### Rodar testes
+
+```bash
+docker compose exec app php artisan test
+```
+
+### Limpar cache de configuracao
+
+```bash
+docker compose exec app php artisan config:clear
+```
+
+## Rotas base
+
+Algumas rotas principais:
+
+- `POST /api/register`
+- `POST /api/login`
+- `GET /api/me`
+- `GET /api/posts`
+- `POST /api/posts`
+- `GET /api/posts/{post}`
+- `GET /api/posts/{post}/comments`
+- `POST /api/posts/{post}/comments`
+
+Para listar todas as rotas:
+
+```bash
+docker compose exec app php artisan route:list
+```
+
+## Banco de dados do Docker
+
+Configuracao usada pelos containers:
+
+- Host: `db`
+- Port: `3306`
+- Database: `testdb`
+- User: `testroot`
+- Password: `secret!132`
+
+Para acessar pelo host:
+
+- Host: `127.0.0.1`
+- Port: `3316`
+- Database: `testdb`
+- User: `testroot`
+- Password: `secret!132`
+
+## Observacoes do ambiente atual
+
+- O container `app` executa `composer install`, copia `.env.example` para `.env` e gera `APP_KEY` ao subir.
+- Se voce alterar manualmente o `.env`, confirme se ele continua correto apos recriar o container.
+- O projeto hoje foi validado para uso via Docker. O fluxo fora do container nao esta documentado aqui.
+
+## Troubleshooting
+
+### Avatar retorna 403 ou 404
+
+Execute:
+
+```bash
+docker compose exec app php artisan storage:link
+```
+
+### Banco nao sobe corretamente
+
+Refaca os volumes e suba novamente:
+
+```bash
+docker compose down -v
+docker compose up --build -d
+```
+
+Depois rode:
+
+```bash
+docker compose exec app php artisan migrate --force
+```
+
+### Validar se a API esta respondendo
+
+```bash
+curl http://localhost:84/up
+```
+
+---
+
+# EN
+
+## Stack
+
+- PHP 8.4
+- Laravel 12
+- Sanctum
+- Nginx
+- MariaDB
+- Docker Compose
+
+## Running with Docker
+
+### Requirements
+
+- Docker Desktop or Docker Engine
+- Docker Compose
+
+### 1. Start the containers
+
+From the project root:
+
+```bash
+docker compose up --build -d
+```
+
+This starts:
+
+- `app`: Laravel PHP-FPM container
+- `nginx`: HTTP server exposed at `http://localhost:84`
+- `db`: MariaDB exposed at `localhost:3316`
+
+### 2. Run the migrations
+
+After the containers are ready:
+
+```bash
+docker compose exec app php artisan migrate --force
+```
+
+### 3. Create the storage symlink
+
+Required to serve avatars from `/storage/...`:
+
+```bash
+docker compose exec app php artisan storage:link
+```
+
+### 4. Access the application
+
+- API: `http://localhost:84`
+- Laravel health check example: `http://localhost:84/up`
+
+## First-time setup
+
+If you want a clean environment:
+
+```bash
+docker compose down -v
+docker compose up --build -d
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan storage:link
+```
+
+## Useful commands
+
+### View logs
+
+```bash
+docker compose logs -f
+```
+
+Or only the app logs:
+
+```bash
+docker compose logs -f app
+```
+
+### Open a shell in the PHP container
+
+```bash
+docker compose exec app bash
+```
+
+### Run tests
+
+```bash
+docker compose exec app php artisan test
+```
+
+### Clear config cache
+
+```bash
+docker compose exec app php artisan config:clear
+```
+
+## Main routes
+
+Some important routes:
+
+- `POST /api/register`
+- `POST /api/login`
+- `GET /api/me`
+- `GET /api/posts`
+- `POST /api/posts`
+- `GET /api/posts/{post}`
+- `GET /api/posts/{post}/comments`
+- `POST /api/posts/{post}/comments`
+
+To list all routes:
+
+```bash
+docker compose exec app php artisan route:list
+```
+
+## Docker database settings
+
+Container connection settings:
+
+- Host: `db`
+- Port: `3306`
+- Database: `testdb`
+- User: `testroot`
+- Password: `secret!132`
+
+From the host machine:
+
+- Host: `127.0.0.1`
+- Port: `3316`
+- Database: `testdb`
+- User: `testroot`
+- Password: `secret!132`
+
+## Current environment notes
+
+- The `app` container runs `composer install`, copies `.env.example` to `.env`, and generates `APP_KEY` on startup.
+- If you manually change `.env`, make sure it still contains the correct values after recreating the container.
+- The project is currently documented and validated for Docker usage. A non-Docker local setup is not documented here.
+
+## Troubleshooting
+
+### Avatar returns 403 or 404
+
+Run:
+
+```bash
+docker compose exec app php artisan storage:link
+```
+
+### Database does not start correctly
+
+Recreate the volumes and start again:
+
+```bash
+docker compose down -v
+docker compose up --build -d
+```
+
+Then run:
+
+```bash
+docker compose exec app php artisan migrate --force
+```
+
+### Check if the API is responding
+
+```bash
+curl http://localhost:84/up
+```
